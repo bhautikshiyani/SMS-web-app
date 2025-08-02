@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const apiKey = getApiKey(userId);
 
   if (!apiKey) return res.status(400).json({ error: 'API key not found' });
-1
+
   try {
     const result = await sendSMS(to, message, apiKey);
     res.status(200).json({ messageId: result?.id || null });

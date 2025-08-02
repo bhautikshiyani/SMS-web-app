@@ -1,12 +1,13 @@
-import SendSMSForm from '@/components/Messeges/SendSMSForm';
-import SettingsForm from '@/components/Settings/SettingsForm';
 
 export default function HomePage() {
   return (
-    <main className="p-8 space-y-8">
-      <h1 className="text-2xl font-bold">Sinch SMS Integration</h1>
-      <SettingsForm />
-      <SendSMSForm />
-    </main>
+    
+    
+     <div className="@container/main  flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 md:gap-6 ">
+        Sinch SMS Integration
+        </div>
+      </div>
+    
   );
 }
