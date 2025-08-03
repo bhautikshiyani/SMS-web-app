@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import MessageStatus from './MessageStatus';
+import NewMessageDialog from './NewMessageDialog';
 
 interface Chat {
     id: number;
@@ -24,6 +25,8 @@ interface Chat {
 
 interface ChatListProps {
     onSelectChat: (chat: Chat) => void;
+    onNewMessage: any;
+
     selectedChat: Chat
 }
 
@@ -82,7 +85,14 @@ const chatList = [
 ];
 
 
-const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChat }: ChatListProps) => {
+const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChat,onNewMessage }: ChatListProps) => {
+    const handleNewMessage = (messageData: any) => {
+        console.log('New message sent:', messageData);
+        if (onNewMessage) {
+            onNewMessage(messageData);
+        }
+        // You could also add the new message to the chat list or refresh data here
+    };
     return (
         <>
             <Card className="w-full lg:w-96 flex pb-0 flex-col">
@@ -90,7 +100,10 @@ const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChat }: ChatL
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl lg:text-2xl font-semibold">Chats</h2>
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                                <NewMessageDialog onMessageSent={handleNewMessage} />
+                            </DropdownMenuTrigger>
+                            {/* <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm" className="h-9 w-9 rounded-full p-0">
                                     <Plus className="h-4 w-4" />
                                 </Button>
@@ -98,7 +111,7 @@ const ChatList: React.FC<ChatListProps> = ({ onSelectChat, selectedChat }: ChatL
                             <DropdownMenuContent>
                                 <DropdownMenuItem>New Chat</DropdownMenuItem>
                                 <DropdownMenuItem>New Group</DropdownMenuItem>
-                            </DropdownMenuContent>
+                            </DropdownMenuContent> */}
                         </DropdownMenu>
                     </div>
 

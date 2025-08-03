@@ -142,7 +142,47 @@ const messages = [
         status: "delivered"
     }
 ];
+const renderMessage = (message: any) => {
+    const baseClasses = `max-w-sm space-y-1 ${message.isSent ? 'self-end' : ''}`;
 
+    return (
+        <div key={message.id} className={baseClasses}>
+            <div className="flex items-center gap-2">
+                {message.type === 'file' ? (
+                    <FileMessage fileName={message.fileName} fileSize={message.fileSize} isSent={message.isSent} />
+                ) : message.type === 'video' ? (
+                    <VideoMessage thumbnail={message.thumbnail} duration={message.duration} />
+                ) : message.type === 'audio' ? (
+                    <AudioMessage duration={message.duration} />
+                ) : message.type === 'images' ? (
+                    <ImageGallery images={message.images} additionalCount={message.additionalCount} />
+                ) : (
+                    <div className={`inline-flex rounded-md border p-4 bg-muted ${message.isSent ? 'order-1' : ''}`}>
+                        {message.text}
+                    </div>
+                )}
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem>Reply</DropdownMenuItem>
+                        <DropdownMenuItem>Forward</DropdownMenuItem>
+                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+
+            <div className={`flex items-center gap-2 ${message.isSent ? 'justify-end' : ''}`}>
+                <time className="text-muted-foreground text-xs">{message.time}</time>
+                {message.isSent && <MessageStatus status={message.status} />}
+            </div>
+        </div>
+    );
+};
 const ChatUI = () => {
     const [selectedChat, setSelectedChat] = useState(chatList[0]);
     const [messageText, setMessageText] = useState('');
@@ -158,48 +198,11 @@ const ChatUI = () => {
         setShowChatView(false);
     };
 
-
-    const renderMessage = (message: any) => {
-        const baseClasses = `max-w-sm space-y-1 ${message.isSent ? 'self-end' : ''}`;
-
-        return (
-            <div key={message.id} className={baseClasses}>
-                <div className="flex items-center gap-2">
-                    {message.type === 'file' ? (
-                        <FileMessage fileName={message.fileName} fileSize={message.fileSize} isSent={message.isSent} />
-                    ) : message.type === 'video' ? (
-                        <VideoMessage thumbnail={message.thumbnail} duration={message.duration} />
-                    ) : message.type === 'audio' ? (
-                        <AudioMessage duration={message.duration} />
-                    ) : message.type === 'images' ? (
-                        <ImageGallery images={message.images} additionalCount={message.additionalCount} />
-                    ) : (
-                        <div className={`inline-flex rounded-md border p-4 bg-muted ${message.isSent ? 'order-1' : ''}`}>
-                            {message.text}
-                        </div>
-                    )}
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem>Reply</DropdownMenuItem>
-                            <DropdownMenuItem>Forward</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-
-                <div className={`flex items-center gap-2 ${message.isSent ? 'justify-end' : ''}`}>
-                    <time className="text-muted-foreground text-xs">{message.time}</time>
-                    {message.isSent && <MessageStatus status={message.status} />}
-                </div>
-            </div>
-        );
+    const handleNewMessage = (messageData: any) => {
+        console.log('New message sent:', messageData);
+        // Handle new message logic here
     };
+  
 
     return (
         <TooltipProvider>
@@ -207,13 +210,13 @@ const ChatUI = () => {
                 {
                     isLaptop ?
                         <>
-                            {showChatView ? <ChatView selectedChat={selectedChat} messages={messages} handleBackToList={handleBackToList} messageText={messageText} setMessageText={setMessageText} renderMessage={renderMessage} /> : <ChatList onSelectChat={handleChatSelect} selectedChat={selectedChat} />}
+                            {showChatView ? <ChatView selectedChat={selectedChat} messages={messages} handleBackToList={handleBackToList} messageText={messageText} setMessageText={setMessageText} renderMessage={renderMessage} /> : <ChatList onNewMessage={handleNewMessage} onSelectChat={handleChatSelect} selectedChat={selectedChat} />}
 
                         </>
                         :
                         <>
 
-                            <ChatList onSelectChat={handleChatSelect} selectedChat={selectedChat} />
+                            <ChatList onNewMessage={handleNewMessage} onSelectChat={handleChatSelect} selectedChat={selectedChat} />
                             <ChatView selectedChat={selectedChat} messages={messages} handleBackToList={handleBackToList} messageText={messageText} setMessageText={setMessageText} renderMessage={renderMessage} />
                         </>
                 }
