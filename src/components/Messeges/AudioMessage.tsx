@@ -4,7 +4,7 @@ interface AudioMessageProps {
   duration?: string;
 }
 
-const AudioMessage: React.FC<AudioMessageProps> = ({ duration }) => {
+const AudioMessage: React.FC<AudioMessageProps> = () => {
   return (
     <div className="flex items-center justify-center p-4 bg-muted rounded-md border">
             <audio controls className="w-80">

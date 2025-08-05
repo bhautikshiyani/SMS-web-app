@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Video, PhoneOff, MoreHorizontal, ArrowLeft, Send, Smile, Paperclip, Mic, CirclePlus } from 'lucide-react';
+
+import { MoreHorizontal, ArrowLeft, Send, Smile, Paperclip, Mic, CirclePlus, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ChatMessageList } from '../ui/chat/chat-message-list';
 interface Message {
     id: number;
-    type?: string; 
+    type?: string;
     text?: string;
     fileName?: string;
     fileSize?: string;
@@ -28,12 +29,12 @@ interface Chat {
     id: number;
     name: string;
     lastMessage: string;
-    avatar: string | null; 
+    avatar: string | null;
     time: string;
     unreadCount: number;
     isOnline: boolean;
     messageStatus: string;
-    initials?: string;   
+    initials?: string;
 }
 
 
@@ -50,7 +51,22 @@ const ChatView: React.FC<ChatViewProps> = ({ selectedChat, messages, handleBackT
     if (!selectedChat) {
         return <figure className="h-full items-center justify-center text-center lg:flex"><img alt="shadcn/ui" loading="lazy" width="200" height="200" decoding="async" data-nimg="1" className="block max-w-sm dark:hidden" style={{ color: "transparent" }} src="/not-selected-chat.svg" /><img alt="shadcn/ui" loading="lazy" width="200" height="200" decoding="async" data-nimg="1" className="hidden max-w-sm dark:block" style={{ color: "transparent" }} src="/not-selected-chat-light.svg" /></figure>;
     }
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
 
+        const allowedTypes = ['image/', 'audio/', 'video/'];
+        const isValid = allowedTypes.some(type => file.type.startsWith(type));
+
+        if (!isValid) {
+            alert('Only image, audio, or video files are allowed.');
+            return;
+        }
+
+        console.log('Selected file:', file);
+
+        event.target.value = '';
+    };
     return (
         <>
             <div className="flex-1 bg-background flex h-full flex-col lg:relative lg:z-10 lg:bg-transparent">
@@ -82,19 +98,12 @@ const ChatView: React.FC<ChatViewProps> = ({ selectedChat, messages, handleBackT
 
                     <div className="flex items-center gap-2">
                         <div className="hidden lg:flex gap-2">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0">
-                                        <Video className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Video Call</TooltipContent>
-                            </Tooltip>
+
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="outline" size="sm" className="h-9 w-9 p-0">
-                                        <PhoneOff className="h-4 w-4" />
+                                        <Phone className="h-4 w-4" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Voice Call</TooltipContent>
@@ -159,9 +168,23 @@ const ChatView: React.FC<ChatViewProps> = ({ selectedChat, messages, handleBackT
 
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-9 w-9 rounded-full p-0">
-                                            <Paperclip className="h-4 w-4" />
-                                        </Button>
+                                        <div>
+                                            <input
+                                                id="file-input"
+                                                type="file"
+                                                accept="image/*,audio/*,video/*"
+                                                onChange={handleFileUpload}
+                                                hidden
+                                            />
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-9 w-9 rounded-full p-0"
+                                                onClick={() => document.getElementById('file-input')?.click()}
+                                            >
+                                                <Paperclip className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TooltipTrigger>
                                     <TooltipContent>Attach File</TooltipContent>
                                 </Tooltip>

@@ -22,17 +22,17 @@
 import { PhoneInput } from '../ui/phone-input';
 import toast from 'react-hot-toast';
 
-    interface Chat {
-        id: number;
-        name: string;
-        lastMessage: string;
-        avatar: string | null;
-        time: string;
-        unreadCount: number;
-        isOnline: boolean;
-        messageStatus: string;
-        initials?: string;
-    }
+    // interface Chat {
+    //     id: number;
+    //     name: string;
+    //     lastMessage: string;
+    //     avatar: string | null;
+    //     time: string;
+    //     unreadCount: number;
+    //     isOnline: boolean;
+    //     messageStatus: string;
+    //     initials?: string;
+    // }
 
 
    
@@ -46,8 +46,6 @@ import toast from 'react-hot-toast';
         const [error, setError] = useState('');
         const [success, setSuccess] = useState('');
         const [country, setCountry] = useState('');
-
-        const FROM_NUMBER = '+19876543210';
 
         const addRecipient = () => {
             if (currentRecipient && !recipients.includes(currentRecipient)) {

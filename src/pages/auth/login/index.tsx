@@ -1,0 +1,159 @@
+'use client'
+import { useState } from 'react'
+
+import Link from 'next/link'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
+import { loginFormSchema } from '@/lib/schema/validation-schemas'
+import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
+import axios from 'axios'
+import Loading from '@/components/common/Loading'
+
+const formSchema = loginFormSchema
+
+export default function LoginPreview() {
+    const router = useRouter()
+    const [isLoading, setIsLoading] = useState(false)
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+    })
+
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        setIsLoading(true)
+        try {
+            const res = await axios.post('/api/auth/login', values)
+            const { token } = res.data
+            localStorage.setItem('token', token)
+            toast.success('Login successful!')
+            router.push('/messages')
+        } catch (error: any) {
+            console.error(error)
+            const message = error?.response?.data?.message || 'Login failed.'
+            toast.error(message)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+
+    return (
+        <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
+            <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex justify-center flex-1">
+                <div className="flex-1 bg-indigo-100/35 text-center hidden lg:flex">
+                    <div
+                        className="m-12 xl:m-16 w-full bg-contain bg-center bg-no-repeat"
+                        style={{
+                            backgroundImage:
+                                "url('/—Pngtree—future technology china telecom mobile_7134652.png')",
+                        }}
+                    />
+                </div>
+                <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12">
+                    <div className="flex justify-center">
+                        <img
+                            src="/images/logo/top-grade-telecom.png"
+                            alt="Logo"
+                            width={128}
+                            height={32}
+                        />
+                    </div>
+                    <div className="mt-12 flex flex-col items-center">
+                        <h1 className="text-2xl xl:text-2xl font-extrabold">Sign in</h1>
+                        <div className="w-full flex-1 mt-8">
+                            <div className="mx-auto max-w-xs space-y-5">
+                                <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                                        <div className="grid gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="email"
+                                                render={({ field }) => (
+                                                    <FormItem className="grid gap-2">
+                                                        <FormLabel>Email</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                placeholder="johndoe@mail.com"
+                                                                type="email"
+                                                                autoComplete="email"
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="password"
+                                                render={({ field }) => (
+                                                    <FormItem className="grid gap-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <FormLabel>Password</FormLabel>
+                                                            <Link
+                                                                href="#"
+                                                                className="ml-auto inline-block text-sm underline"
+                                                            >
+                                                                Forgot your password?
+                                                            </Link>
+                                                        </div>
+                                                        <FormControl>
+                                                            <PasswordInput
+                                                                placeholder="******"
+                                                                autoComplete="current-password"
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
+                                                {isLoading ? (
+                                                    <>
+                                                        <Loading />
+                                                        Logging in...
+                                                    </>
+                                                ) : (
+                                                    'Login'
+                                                )}
+                                            </Button>
+
+                                        </div>
+                                    </form>
+                                </Form>
+
+                                <p className="text-xs text-gray-600 text-center">
+                                    I agree to abide by templatana's{" "}
+                                    <a href="#" className="underline">
+                                        Terms of Service
+                                    </a>{" "}
+                                    and{" "}
+                                    <a href="#" className="underline">
+                                        Privacy Policy
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

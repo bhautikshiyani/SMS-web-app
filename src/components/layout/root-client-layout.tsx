@@ -17,7 +17,8 @@ export default function RootClientLayout({
       enableSystem
       disableTransitionOnChange
     >
-      <Toaster />
+      <Toaster position="top-right"
+        reverseOrder={false} />
       <Layout>{children}</Layout>
     </ThemeProvider>
   );
