@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import Loading from '@/components/common/Loading'
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
+import AuthLayout from '@/components/layout/auth-layout'
 // import ComponentsAuthLoginForm from '@/components/auth/ComponentsAuthLoginForm'
 
 const formSchema = loginFormSchema
@@ -75,123 +76,96 @@ export default function LoginPreview() {
 
     return (
         <>
-            {/* <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-
-                <div >
-                    <div className="absolute inset-0">
-                        <img src="/images/auth/bg-gradient.png" alt="image" className="h-full w-full object-cover" />
-                    </div>
-
-                    <div className="relative flex min-h-screen items-center justify-center bg-[url(/images/auth/map.png)] bg-cover bg-center bg-no-repeat px-6 py-6 dark:bg-[#060818] sm:px-16">
-                        <img src="/images/auth/coming-soon-object1.png" alt="image" className="absolute left-0 top-1/2 h-full max-h-[893px] -translate-y-1/2" />
-                        <img src="/images/auth/coming-soon-object2.png" alt="image" className="absolute left-24 top-0 h-40 md:left-[30%]" />
-                        <img src="/images/auth/coming-soon-object3.png" alt="image" className="absolute right-0 top-0 h-[300px]" />
-                        <img src="/images/auth/polygon-object.svg" alt="image" className="absolute bottom-0 end-[28%]" />
-                        <div className="relative w-full max-w-[770px] rounded-md bg-[linear-gradient(45deg,#fff9f9_0%,rgba(255,255,255,0)_25%,rgba(255,255,255,0)_75%,_#fff9f9_100%)] p-2 dark:bg-[linear-gradient(52.22deg,#0E1726_0%,rgba(14,23,38,0)_18.66%,rgba(14,23,38,0)_51.04%,rgba(14,23,38,0)_80.07%,#0E1726_100%)]">
-                            <div className="relative flex flex-col justify-center rounded-md bg-white/60 px-6 py-8 md:py-10 2xl:py-20 backdrop-blur-lg dark:bg-black/50 ">
-
-                                <div className="mx-auto w-full max-w-[440px]">
-                                    <div className="flex justify-center mb-3">
-                                        <img
-                                            src="/images/logo/top-grade-telecom.png"
-                                            alt="Logo"
-                                            width={128}
-                                            height={32}
-                                        />
-                                    </div>
-                                    <div className="mb-10">
-                                        <h1 className="text-2xl md:text-3xl font-extrabold uppercase !leading-snug text-primary ">Sign in</h1>
-                                        <p className="text-base font-bold leading-normal text-white-dark">Enter your email and password to login</p>
-                                    </div>
-                                    <Form {...form}>
-                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 dark:text-white">
-                                            <div className="grid gap-4">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="email"
-                                                    render={({ field }) => (
-                                                        <FormItem className="grid gap-2">
-                                                            <FormLabel>Email</FormLabel>
-                                                            <FormControl>
-
-
-                                                                <Input
-                                                                    placeholder="johndoe@mail.com"
-                                                                    type="email"
-                                                                    autoComplete="email"
-                                                                    {...field}
-                                                                />
-
-
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <FormField
-                                                    control={form.control}
-                                                    name="password"
-                                                    render={({ field }) => (
-                                                        <FormItem className="grid gap-2">
-                                                            <div className="flex justify-between items-center">
-                                                                <FormLabel>Password</FormLabel>
-                                                                <Link
-                                                                    href="/auth/forgetPassword"
-                                                                    className="ml-auto inline-block text-sm underline text-gray-500 hover:text-gray-800"
-                                                                >
-                                                                    Forgot your password?
-                                                                </Link>
-                                                            </div>
-                                                            <FormControl >
-
-
-                                                                <PasswordInput
-                                                                    placeholder="******"
-                                                                    autoComplete="current-password"
-                                                                    {...field}
-                                                                />
-
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
-                                                    {isLoading ? (
-                                                        <>
-                                                            <Loading />
-                                                            Logging in...
-                                                        </>
-                                                    ) : (
-                                                        'Login'
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </form>
-                                    </Form>
-                                    <div className="relative my-7 text-center ">
-                                        <span className="absolute inset-x-0 top-1/2 h-px w-full -translate-y-1/2 bg-white-light dark:bg-white-dark"></span>
-                                        <span className="relative px-2 font-bold uppercase text-white-dark dark:bg-dark dark:text-white-light">or</span>
-                                    </div>
-                                    <div className="flex justify-center">
-                                        <GoogleLogin
-                                            onSuccess={handleGoogleSuccess}
-                                            onError={handleGoogleError}
-                                            useOneTap
-                                        />
-                                    </div>
-
-                                   
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </GoogleOAuthProvider> */}
-
-
             <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+                <AuthLayout>
+                    <div className="mb-10">
+                        <h1 className="text-2xl md:text-3xl font-extrabold uppercase !leading-snug text-primary ">Sign in</h1>
+                        <p className="text-base font-bold leading-normal text-white-dark">Enter your email and password to login</p>
+                    </div>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 dark:text-white">
+                            <div className="grid gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem className="grid gap-2">
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+
+
+                                                <Input
+                                                    placeholder="johndoe@mail.com"
+                                                    type="email"
+                                                    autoComplete="email"
+                                                    {...field}
+                                                />
+
+
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem className="grid gap-2">
+                                            <div className="flex justify-between items-center">
+                                                <FormLabel>Password</FormLabel>
+                                                <Link
+                                                    href="/auth/forgotPassword"
+                                                    className="ml-auto inline-block text-sm underline text-gray-500 hover:text-gray-800"
+                                                >
+                                                    Forgot your password?
+                                                </Link>
+                                            </div>
+                                            <FormControl >
+
+
+                                                <PasswordInput
+                                                    placeholder="******"
+                                                    autoComplete="current-password"
+                                                    {...field}
+                                                />
+
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" className="w-full cursor-pointer" disabled={isLoading}>
+                                    {isLoading ? (
+                                        <>
+                                            <Loading />
+                                            Logging in...
+                                        </>
+                                    ) : (
+                                        'Login'
+                                    )}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                    <div className="relative my-7 text-center ">
+                        <span className="absolute inset-x-0 top-1/2 h-px w-full -translate-y-1/2 bg-white-light dark:bg-white-dark"></span>
+                        <span className="relative px-2 font-bold uppercase text-white-dark dark:bg-dark dark:text-white-light">or</span>
+                    </div>
+                    <div className="flex justify-center">
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            useOneTap
+                        />
+                    </div>
+
+                </AuthLayout>
+
+            </GoogleOAuthProvider>
+
+
+            {/* <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
                 <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
                     <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex justify-center flex-1">
                         <div className="flex-1 bg-indigo-100/35 text-center hidden lg:flex">
@@ -300,7 +274,7 @@ export default function LoginPreview() {
                         </div>
                     </div>
                 </div>
-            </GoogleOAuthProvider>
+            </GoogleOAuthProvider> */}
         </>
     )
 }
