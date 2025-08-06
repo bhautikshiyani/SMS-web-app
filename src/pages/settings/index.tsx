@@ -1,20 +1,54 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const Settings = () => {
   const [apiKey, setApiKey] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = async () => {
-    await fetch('/api/settings/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey }),
-    });
-    alert('API Key saved (temporarily)');
-  };
+  useEffect(() => {
+    async function fetchApiKey() {
+      try {
+        const token = localStorage.getItem('token');
+
+        const res = await axios.get('/api/tenant-settings', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+
+        });
+        if (res.status === 200 && res.data?.apiKey) {
+          setApiKey(res.data.apiKey);
+        }
+      } catch (error) {
+        console.error('Failed to fetch API key', error);
+        toast.error('Failed to load API key');
+      }
+    }
+    fetchApiKey();
+  }, []);
+
+  async function handleSave() {
+    setLoading(true);
+    try {
+      const res = await axios.put('/api/tenant-settings', { apiKey }); // Adjust method & endpoint accordingly
+      if (res.status === 200) {
+        toast.success('API Key saved successfully!');
+      } else {
+        toast.error('Failed to save API Key.');
+      }
+    } catch (error) {
+      console.error('Failed to save API key', error);
+      toast.error('Failed to save API Key.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div>
@@ -42,8 +76,8 @@ const Settings = () => {
         </CardContent>
 
         <CardFooter>
-          <Button onClick={handleSave} className="w-auto">
-            Save API Key
+          <Button onClick={handleSave} disabled={loading} className="w-auto">
+            {loading ? 'Saving...' : 'Save API Key'}
           </Button>
         </CardFooter>
       </Card>

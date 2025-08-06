@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 
+import { useSearchParams, useRouter } from 'next/navigation'
 
 import {
   Form,
@@ -29,6 +30,11 @@ import toast from 'react-hot-toast'
 const formSchema = resetPasswordFormSchema
 
 export default function ResetPassword() {
+  const searchParams = useSearchParams()
+
+  const router = useRouter()
+  const token = searchParams.get('token') || ''
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,17 +44,38 @@ export default function ResetPassword() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!token) {
+      toast.error('Reset token is missing or invalid.')
+      return
+    }
+
     try {
-      // Assuming an async reset password function
-      console.log(values)
-      toast.success(
-        'Password reset successful. You can now log in with your new password.',
-      )
+      const res = await fetch(`/api/auth/resetPassword?token=${token}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          newPassword: values.password,
+          confirmPassword: values.confirmPassword,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.message || 'Failed to reset the password.')
+        return
+      }
+
+      toast.success('Password reset successful! You can now log in.')
+      router.push('/auth/login')
     } catch (error) {
       console.error('Error resetting password', error)
       toast.error('Failed to reset the password. Please try again.')
     }
   }
+
 
   return (
     <div className="flex min-h-[50vh] h-full w-full items-center justify-center px-4">

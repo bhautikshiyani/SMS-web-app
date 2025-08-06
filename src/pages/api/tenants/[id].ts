@@ -32,32 +32,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return sendError(res, 403, 'Forbidden: insufficient permissions');
       }
 
-      const tenant = await Tenant.findById(id);
-      if (!tenant) return sendError(res, 404, 'Tenant not found');
+      const tenant = await Tenant.findOne({ _id: id, isDeleted: false });
+      if (!tenant) return sendError(res, 404, 'Tenant not found or deleted');
 
       return res.status(200).json({ status: 'success', data: tenant });
-    } 
+    }
     else if (req.method === 'PUT') {
       if (!isSuperAdmin && !isTenantOwner) {
         return sendError(res, 403, 'Forbidden: insufficient permissions');
       }
 
       const updateData = req.body;
-      const tenant = await Tenant.findByIdAndUpdate(id, updateData, { new: true });
-      if (!tenant) return sendError(res, 404, 'Tenant not found');
+      const tenant = await Tenant.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        updateData,
+        { new: true }
+      );
+      if (!tenant) return sendError(res, 404, 'Tenant not found or deleted');
 
       return res.status(200).json({ status: 'success', data: tenant });
-    } 
+    }
+
     else if (req.method === 'DELETE') {
       if (!isSuperAdmin) {
         return sendError(res, 403, 'Forbidden: only SuperAdmin can delete');
       }
 
-      const tenant = await Tenant.findByIdAndDelete(id);
+      const tenant = await Tenant.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
       if (!tenant) return sendError(res, 404, 'Tenant not found');
 
-      return res.status(200).json({ status: 'success', message: 'Tenant deleted' });
-    } 
+      return res.status(200).json({ status: 'success', message: 'Tenant soft deleted', data: tenant });
+    }
+
     else {
       return sendError(res, 405, 'Method not allowed');
     }

@@ -40,12 +40,24 @@ export default function ForgetPassword() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      // Assuming a function to send reset email
-      console.log(values)
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: values.email }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.message || 'Failed to send reset email.')
+      }
+
       toast.success('Password reset email sent. Please check your inbox.')
-    } catch (error) {
+      form.reset()
+    } catch (error: any) {
       console.error('Error sending password reset email', error)
-      toast.error('Failed to send password reset email. Please try again.')
+      toast.error(error.message || 'Something went wrong.')
     }
   }
 

@@ -4,22 +4,10 @@ import Tenant from '@/models/Tenant';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 
-interface SinchSMSResponse {
-  id: string;
-  to: { type: string; number: string }[];
-  from: string;
-  body: string;
-  type: string;
-  delivery_report: string;
-  created_at: string;
-  modified_at: string;
-  client_reference?: string;
-}
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
@@ -34,9 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ message: 'Invalid token' });
   }
 
-  const { to, from, message, tenantId } = req.body;
-  if (!to || !from || !message || !tenantId) {
-    return res.status(400).json({ message: 'Missing fields: to, from, message, tenantId' });
+  const { tenantId } = req.query;
+  if (!tenantId || typeof tenantId !== 'string') {
+    return res.status(400).json({ message: 'Missing or invalid tenantId' });
   }
 
   const tenant = await Tenant.findById(tenantId);
@@ -45,13 +33,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const response = await axios.post<SinchSMSResponse>(
+    const response = await axios.get(
       `https://sms.api.sinch.com/xms/v1/${tenant.sinchApiKey}/batches`,
-      {
-        from,
-        to: [to],
-        body: message,
-      },
       {
         auth: {
           username: tenant.sinchApiKey,
@@ -64,13 +47,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     return res.status(200).json({
-      messageId: response.data.id,
-      status: 'Sent',
-      timestamp: new Date().toISOString(),
+      status: 'success',
+      data: response.data,
     });
   } catch (error: any) {
     return res.status(500).json({
-      message: 'SMS sending failed',
+      message: 'Failed to fetch messages',
       error: error.response?.data || error.message,
     });
   }

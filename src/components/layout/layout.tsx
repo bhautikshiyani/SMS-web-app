@@ -8,9 +8,11 @@ import { Main } from './main';
 import { usePathname } from 'next/navigation';
 
 
-
 const authRoutes = [
   '/auth/login',
+  '/auth/register',
+  '/auth/resetPassword',
+  '/auth/forgotPassword',
   '/404',
 ];
 

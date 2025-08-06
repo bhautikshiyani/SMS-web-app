@@ -1,4 +1,4 @@
-import  { Schema, model, models } from 'mongoose';
+import { Schema, model, models } from 'mongoose';
 
 export interface ITenant {
   name: string;
@@ -12,6 +12,7 @@ export interface ITenant {
     phone: boolean;
   };
   retentionPeriodYears: number;
+  isDeleted: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -29,10 +30,10 @@ const TenantSchema = new Schema<ITenant>(
       phone: { type: Boolean, default: true },
     },
     retentionPeriodYears: { type: Number, default: 7 },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
 const Tenant = models.Tenant || model<ITenant>('Tenant', TenantSchema);
-
 export default Tenant;

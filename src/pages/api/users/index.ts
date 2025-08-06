@@ -24,16 +24,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email, isDeleted: false });
     if (existing) {
       return res.status(409).json({ status: 'error', message: 'User with this email already exists' });
     }
 
-    const newUser = new User({ name, email, password, role, tenantId });
-    console.log('Creating new user:', newUser);
+    const newUser = new User({ name, email, password, role, tenantId, isDeleted: false });
     await newUser.save();
 
-    return res.status(201).json({ status: 'success', data: newUser });
+    return res.status(201).json({ status: 'success', data: newUser.toObject() });
   } catch (err: any) {
     return res.status(500).json({ status: 'error', message: err.message || 'Internal Server Error' });
   }

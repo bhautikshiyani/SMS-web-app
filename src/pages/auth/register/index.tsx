@@ -1,38 +1,44 @@
 'use client'
 
 import Link from 'next/link'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useRouter } from 'next/navigation'
+import axios from 'axios'
+import toast from 'react-hot-toast'
 
-
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent
+} from '@/components/ui/card'
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { registerFormSchema } from '@/lib/schema/validation-schemas'
-import toast from 'react-hot-toast'
+import { z } from 'zod'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-
-
-const formSchema = registerFormSchema
+const formSchema = registerFormSchema.extend({
+  tenantId: z.string().min(1, 'Tenant is required'),
+})
 
 export default function RegisterPreview() {
+  const router = useRouter()
+  const [tenants, setTenants] = useState<{ _id: string; name: string }[]>([])
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,23 +47,43 @@ export default function RegisterPreview() {
       phone: '',
       password: '',
       confirmPassword: '',
+      tenantId: '',
     },
   })
 
+  useEffect(() => {
+    async function fetchTenants() {
+      try {
+        const res = await axios.get('/api/tenants')
+        setTenants(res.data.data)
+      } catch (err) {
+        console.error('Failed to fetch tenants', err)
+        toast.error('Unable to load tenants')
+      }
+    }
+
+    fetchTenants()
+  }, [])
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      // Assuming an async registration function
-      console.log(values)
-     toast
-    } catch (error) {
-      console.error('Form submission error', error)
-      toast.error('Failed to submit the form. Please try again.')
+      const response = await axios.post('/api/auth/register', values)
+
+      if (response.status === 201 || response.status === 200) {
+        toast.success('Registration successful! Please log in.')
+        router.push('/auth/login')
+      } else {
+        toast.error('Registration failed. Please try again.')
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Registration failed.'
+      toast.error(msg)
     }
   }
 
   return (
     <div className="flex min-h-[60vh] h-full w-full items-center justify-center px-4">
-      <Card className="mx-auto max-w-sm">
+      <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl">Register</CardTitle>
           <CardDescription>
@@ -68,31 +94,54 @@ export default function RegisterPreview() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid gap-4">
-                {/* Name Field */}
+
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="tenantId"
                   render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="name">Full Name</FormLabel>
+                    <FormItem>
+                      <FormLabel>Tenant</FormLabel>
                       <FormControl>
-                        <Input id="name" placeholder="John Doe" {...field} />
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select tenant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tenants.map((tenant) => (
+                              <SelectItem key={tenant._id} value={tenant._id}>
+                                {tenant.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Email Field */}
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="email">Email</FormLabel>
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
-                          id="email"
                           placeholder="johndoe@mail.com"
                           type="email"
                           autoComplete="email"
@@ -104,64 +153,44 @@ export default function RegisterPreview() {
                   )}
                 />
 
-                {/* Phone Field */}
                 <FormField
                   control={form.control}
                   name="phone"
                   render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="phone">Phone Number</FormLabel>
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <PhoneInput {...field} defaultCountry="TR" />
-                        {/* <Input
-                          id="phone"
-                          placeholder="555-123-4567"
-                          type="tel"
-                          autoComplete="tel"
-                          {...field}
-                        /> */}
+                        <PhoneInput {...field} defaultCountry="IN" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Password Field */}
+                {/* Password */}
                 <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="password">Password</FormLabel>
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <PasswordInput
-                          id="password"
-                          placeholder="******"
-                          autoComplete="new-password"
-                          {...field}
-                        />
+                        <PasswordInput placeholder="******" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Confirm Password Field */}
+                {/* Confirm Password */}
                 <FormField
                   control={form.control}
                   name="confirmPassword"
                   render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="confirmPassword">
-                        Confirm Password
-                      </FormLabel>
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <PasswordInput
-                          id="confirmPassword"
-                          placeholder="******"
-                          autoComplete="new-password"
-                          {...field}
-                        />
+                        <PasswordInput placeholder="******" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,9 +203,10 @@ export default function RegisterPreview() {
               </div>
             </form>
           </Form>
+
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
-            <Link href="#" className="underline">
+            <Link href="/auth/login" className="underline">
               Login
             </Link>
           </div>
