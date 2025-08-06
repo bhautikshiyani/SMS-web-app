@@ -10,7 +10,7 @@ import { TeamSwitcher } from '@/components/layout/team-switcher';
 import { sidebarData } from './data/sidebar-data';
 
 
-export function AppSidebar({...props }) {
+export function AppSidebar({ ...props }) {
 
   return (
     <Sidebar collapsible="icon" variant="floating" {...props}>
@@ -23,7 +23,6 @@ export function AppSidebar({...props }) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        
         {sidebarData.footer.map((props) => (
           <NavGroup className='p-0' key={props.title} {...props} />
         ))}

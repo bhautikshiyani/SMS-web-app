@@ -1,4 +1,4 @@
-import { Contact, LogOut, MessageCircle, Phone, Settings, Voicemail } from 'lucide-react';
+import { BadgeQuestionMark, Contact, LogOut, Mail, MessageCircle, Phone, Settings, Voicemail } from 'lucide-react';
 import { type SidebarData } from '../types';
 
 
@@ -12,17 +12,17 @@ export const sidebarData: SidebarData = {
           url: '/messages',
           icon: MessageCircle,
         },
-          {
+        {
           title: 'Contacts',
           url: '/contacts',
           icon: Contact,
         },
-          {
+        {
           title: 'Voicemail',
           url: '/voicemail',
           icon: Voicemail,
         },
-          {
+        {
           title: 'Phone',
           url: '/phone',
           icon: Phone,
@@ -31,6 +31,23 @@ export const sidebarData: SidebarData = {
     },
   ],
   footer: [
+
+    {
+      title: 'Support Center',
+      icon: BadgeQuestionMark,
+      items: [
+        {
+          title: 'Phone Support',
+          url: '',
+          icon: Phone,
+        },
+        {
+          title: 'Email Support',
+          url: '',
+          icon: Mail,
+        },
+      ],
+    },
     {
       title: 'Setting',
       items: [
@@ -39,7 +56,7 @@ export const sidebarData: SidebarData = {
           url: '/settings',
           icon: Settings,
         },
-         {
+        {
           title: 'Logout',
           url: '/auth/login',
           icon: LogOut,

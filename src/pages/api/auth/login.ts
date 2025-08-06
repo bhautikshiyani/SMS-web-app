@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!email || !password) return res.status(400).json({ message: 'Missing fields' });
 
   await dbConnect();
-
   const user = await User.findOne({ email });
   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
