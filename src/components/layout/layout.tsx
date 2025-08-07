@@ -1,11 +1,12 @@
 'use client';
 import Cookies from 'js-cookie';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { SidebarProvider } from '../ui/sidebar';
 import { AppSidebar } from './app-sidebar';
 import { Header } from './header';
 import { Main } from './main';
 import { usePathname } from 'next/navigation';
+import { parseJwt } from '@/lib/auth';
 
 
 const authRoutes = [
@@ -21,19 +22,31 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
 }
 
 function MainLayout({ children }: { children: React.ReactNode }) {
+ const [user, setUser] = useState<any>(null);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY || '');
+    const parsed = token ? parseJwt(token) : null;
+    setUser(parsed);
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) {
+    // Prevent hydration mismatch: render nothing until after mount
+    return null;
+  }
+
   const defaultOpen = Cookies.get('sidebar:state') !== 'true';
 
-
-
   return (
-
-    <SidebarProvider style={
+    <SidebarProvider suppressHydrationWarning style={
       {
-        "--sidebar-width": "calc(var(--spacing) * 72)",
-        "--header-height": "calc(var(--spacing) * 12)",
+        "--sidebar-width": 'calc(var(--spacing) * 72)',
+        "--header-height": 'calc(var(--spacing) * 12)',
       } as React.CSSProperties
     } defaultOpen={defaultOpen}>
-      <AppSidebar variant="inset" />
+      <AppSidebar user={user} variant="inset" />
       <div
         id="content"
         suppressHydrationWarning={true}

@@ -7,6 +7,16 @@ export const sidebarData: SidebarData = {
     {
       title: 'General',
       items: [
+         {
+          title: 'Dashboard',
+          url: '/dashboard',
+          icon: MessageCircle,
+        },
+         {
+          title: 'User',
+          url: '/users',
+          icon: MessageCircle,
+        },
         {
           title: 'Messages',
           url: '/messages',
@@ -56,11 +66,7 @@ export const sidebarData: SidebarData = {
           url: '/settings',
           icon: Settings,
         },
-        {
-          title: 'Logout',
-          url: '/auth/login',
-          icon: LogOut,
-        },
+        
       ],
     },
   ],

@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { dbConnect } from '@/lib/db';
 import User from '@/models/User';

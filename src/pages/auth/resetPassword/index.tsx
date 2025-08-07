@@ -3,9 +3,7 @@
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-
 import { useSearchParams, useRouter } from 'next/navigation'
-
 import {
     Form,
     FormControl,
@@ -15,13 +13,6 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Button } from '@/components/ui/button'
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card'
 import { PasswordInput } from '@/components/ui/password-input'
 import { resetPasswordFormSchema } from '@/lib/schema/validation-schemas'
 import toast from 'react-hot-toast'
