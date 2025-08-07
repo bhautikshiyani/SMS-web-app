@@ -153,10 +153,10 @@ export function UserDataTable({ initialData }: UserTableProps) {
       cell: ({ row }) => <div>{row.original?.email || 'N/A'}</div>,
     },
     {
-      accessorKey: 'dob',
-      header: 'Date of Birth',
+      accessorKey: 'lastlogin',
+      header: 'Last Login',
       cell: ({ row }) => (
-        <div>{row.original?.joiningDate ? formatDate(row.original.dob) : 'N/A'}</div>
+        <div>{row.original?.joiningDate ? formatDate(row.original.lastlogin) : 'N/A'}</div>
       ),
     },
     {
