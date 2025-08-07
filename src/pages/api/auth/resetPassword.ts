@@ -8,7 +8,7 @@ import bcrypt from 'bcryptjs';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ status: 'error', message: 'Method Not Allowed' });
-  } 
+  }
 
   const { newPassword, confirmPassword } = req.body;
   console.log('Resetting password with body:', req.body);
@@ -40,6 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
+    user.isFirstLogin = false;
+
+    user.tempPasswordExpiresAt = undefined;
+
     await user.save();
 
     return res.status(200).json({ status: 'success', message: 'Password has been reset successfully' });

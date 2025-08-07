@@ -36,7 +36,17 @@ const Settings = () => {
   async function handleSave() {
     setLoading(true);
     try {
-      const res = await axios.put('/api/tenant-settings', { apiKey }); // Adjust method & endpoint accordingly
+      const token = localStorage.getItem('token');
+
+      const res = await axios.put(
+        '/api/tenant-settings',
+        { apiKey },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (res.status === 200) {
         toast.success('API Key saved successfully!');
       } else {
