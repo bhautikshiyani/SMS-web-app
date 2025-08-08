@@ -1,4 +1,4 @@
-import { BadgeQuestionMark, Contact, LayoutDashboard, LogOut, Mail, MessageCircle, Phone, Settings, Users, Voicemail } from 'lucide-react';
+import { BadgeQuestionMark, Building2, Contact, LayoutDashboard, LogOut, Mail, MessageCircle, Phone, Settings, Users, Voicemail } from 'lucide-react';
 import { type SidebarData } from '../types';
 
 
@@ -11,6 +11,11 @@ export const sidebarData: SidebarData = {
           title: 'Dashboard',
           url: '/dashboard',
           icon: LayoutDashboard,
+        },
+         {
+          title: 'Tenant',
+          url: '/tenant',
+          icon: Building2,
         },
          {
           title: 'User',

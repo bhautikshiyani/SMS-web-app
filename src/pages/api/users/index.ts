@@ -55,7 +55,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { tenantId, ...rest } = user;
         return {
           ...rest,
-          tenant: tenantId
+          tenant: tenantId,
+          tenantId: tenantId?._id || null,
         };
       });
 
