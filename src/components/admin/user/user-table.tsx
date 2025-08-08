@@ -55,20 +55,33 @@ export function UserDataTable({ reloadKey, onEditUser }: UserTableProps) {
     try {
       const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
 
-      const response = await axios.get("/api/users", {
+      const params = new URLSearchParams({
+        page: (pageIndex + 1).toString(),
+        limit: pageSize.toString(),
+      });
+
+      if (search) params.append("search", search);
+      if (roleFilter && roleFilter !== "all") params.append("role", roleFilter);
+
+      const response = await axios.get(`/api/users?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const users = response.data.data || [];
+      const { data, pagination } = response.data;
 
       setUserData({
-        users,
-        totalUsers: users.length,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
+        users: data,
+        totalUsers: pagination.total,
+        page: pagination.page,
+        limit: pagination.limit,
+        totalPages: pagination.totalPages,
+      });
+
+      setPagination({
+        pageIndex: pagination.page - 1,
+        pageSize: pagination.limit,
       });
     } catch (error: any) {
       console.error("Failed to fetch user data:", error);
@@ -77,10 +90,10 @@ export function UserDataTable({ reloadKey, onEditUser }: UserTableProps) {
       setLoading(false);
     }
   };
+
   React.useEffect(() => {
     fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
-  }, [reloadKey]);
-
+  }, [reloadKey, pagination.pageIndex, pagination.pageSize]);
   const deleteUser = async (userId: string) => {
     if (!userId) return;
 

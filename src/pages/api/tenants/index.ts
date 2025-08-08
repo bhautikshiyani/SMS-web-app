@@ -16,8 +16,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await dbConnect();
 
     if (req.method === 'GET') {
-      const tenants = await Tenant.find({ isDeleted: false });
-      return res.status(200).json({ status: 'success', data: tenants });
+      const { search = '', page = '1', limit = '10' } = req.query;
+
+      const pageNumber = parseInt(page as string, 10) || 1;
+      const pageSize = parseInt(limit as string, 10) || 10;
+
+      const query: any = { isDeleted: false };
+
+      if (search) {
+        query.name = { $regex: search, $options: 'i' };
+      }
+
+      const total = await Tenant.countDocuments(query);
+      const tenants = await Tenant.find(query)
+        .skip((pageNumber - 1) * pageSize)
+        .limit(pageSize)
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        status: 'success',
+        data: tenants,
+        meta: {
+          total,
+          page: pageNumber,
+          limit: pageSize,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      });
     }
 
     const token = req.headers.authorization?.split(' ')[1];

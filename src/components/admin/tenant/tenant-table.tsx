@@ -33,6 +33,7 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
     limit: 10,
     totalPages: 1,
   });
+  const [searchTerm, setSearchTerm] = React.useState("");
 
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
@@ -43,20 +44,26 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
     setLoading(true);
     try {
       const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
       const response = await axios.get("/api/tenants", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        params: {
+          search: searchTerm,
+          page: pagination.pageIndex + 1, // pageIndex is 0-based, backend expects 1-based
+          limit: pagination.pageSize,
+        },
       });
 
-      const tenants = response.data.data || [];
+      const { data: tenants, meta } = response.data;
 
       setTenantData({
         tenants,
-        totalTenants: tenants.length,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
+        totalTenants: meta.total,
+        page: meta.page,
+        limit: meta.limit,
+        totalPages: meta.totalPages,
       });
     } catch (error) {
       toast.error("Failed to load tenants");
@@ -64,6 +71,10 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       setLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    fetchTenants();
+  }, [reloadKey, pagination, searchTerm]);
 
   React.useEffect(() => {
     fetchTenants();
@@ -243,7 +254,10 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       pageSize={pagination.pageSize}
       totalItems={tenantData.totalTenants}
       searchPlaceholder="Search tenants..."
-      onSearch={() => {}} // Optional: Add search logic
+      onSearch={(val: string) => {
+        setSearchTerm(val);
+        setPagination((prev) => ({ ...prev, pageIndex: 0 })); // Reset to first page on search
+      }}
       enableSelection={false}
       enableColumnVisibility={true}
       enablePagination={true}

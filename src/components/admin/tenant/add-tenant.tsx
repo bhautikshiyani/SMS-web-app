@@ -104,7 +104,7 @@ export function AddTenant({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]  ">
         <DialogHeader>
           <DialogTitle>{initialData ? "Edit Tenant" : "Add Tenant"}</DialogTitle>
           <DialogDescription>
@@ -113,7 +113,7 @@ export function AddTenant({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[80vh] overflow-y-auto">
             {/* Logo uploader */}
             <FormField
               control={form.control}
