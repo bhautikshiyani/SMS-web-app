@@ -1,4 +1,4 @@
-import { BadgeQuestionMark, Contact, LogOut, Mail, MessageCircle, Phone, Settings, Voicemail } from 'lucide-react';
+import { BadgeQuestionMark, Contact, LayoutDashboard, LogOut, Mail, MessageCircle, Phone, Settings, Users, Voicemail } from 'lucide-react';
 import { type SidebarData } from '../types';
 
 
@@ -10,12 +10,12 @@ export const sidebarData: SidebarData = {
          {
           title: 'Dashboard',
           url: '/dashboard',
-          icon: MessageCircle,
+          icon: LayoutDashboard,
         },
          {
           title: 'User',
           url: '/users',
-          icon: MessageCircle,
+          icon: Users,
         },
         {
           title: 'Messages',
