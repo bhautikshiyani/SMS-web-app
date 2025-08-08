@@ -28,8 +28,8 @@ export const userAddSchema = z.object({
   tenantId: z.string().min(1, "Tenant is required"),
 
   email: z.string().email({ message: "Please enter a valid email address" }),
-  
-    phone: z
+  role: z.enum(["SuperAdmin", "Admin", "OrgManager", "OrgUser"]),
+  phone: z
     .string()
     .refine(isValidPhoneNumber, { message: "Invalid phone number" }),
   picture: z

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
-import { MoreVerticalIcon, UserCircleIcon } from 'lucide-react';
+import { Badge, MoreVerticalIcon, UserCircleIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,10 +14,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-import { formatDate, getImageSrc } from '@/lib/utils';
+import { formatDate, getImageSrc, getRoleBadgeVariant, getRoleDisplayName } from '@/lib/utils';
 
 import { DataTable } from '../common/DataTable';
 import toast from 'react-hot-toast';
+import Cookies from 'js-cookie';
+import axios from 'axios';
 
 
 
@@ -34,7 +36,6 @@ export function UserDataTable({ initialData }: UserTableProps) {
     return { users: [], totalUsers: 0, page: 1, limit: 10, totalPages: 1 };
   });
 
-  // State for filtering and pagination
   const [searchQuery, setSearchQuery] = React.useState('');
   const [role, setRole] = React.useState<string>('all');
   const [pagination, setPagination] = React.useState({
@@ -42,7 +43,6 @@ export function UserDataTable({ initialData }: UserTableProps) {
     pageSize: userData.limit || 10,
   });
 
-  // Action functions
   const viewUserDetails = (user: any) => {
     if (!user) return;
 
@@ -51,68 +51,86 @@ export function UserDataTable({ initialData }: UserTableProps) {
   const editUser = (user: any) => {
     if (!user) return;
     router.push(`/user/edit?id=${user._id}`);
-  
+
   };
 
-  // Fetch data when parameters change
-  const fetchData = async (page: number, limit: number, search?: string, roleFilter?: string) => {
+  const fetchData = async (
+    pageIndex: number,
+    pageSize: number,
+    search?: string,
+    roleFilter?: string
+  ) => {
     setLoading(true);
     try {
-      // const result = await dispatch(
-      //   fetchEmployeeData({
-      //     page: page + 1,
-      //     limit: limit,
-      //     search: search,
-      //     role: roleFilter === 'all' ? undefined : roleFilter,
-      //   })
-      // ).unwrap();
+      const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
 
-      // // Set the data in state
-      // setUserData(result);
-    } catch (error) {
-      console.error('Failed to fetch employee data:', error);
-      toast.error('Failed to load employee data');
+      const response = await axios.get('/api/users', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const users = response.data.data || [];
+
+      setUserData({
+        users,
+        totalUsers: users.length,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch user data:', error);
+      toast.error('Failed to load user data');
     } finally {
       setLoading(false);
     }
   };
   const deleteUser = async (userId: string) => {
-    if (!userId) return;
-    // await dispatch(deleteEmployee(userId)).unwrap();
-    toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-      loading: 'Deleting user...',
-      success: 'User deleted successfully',
-      error: 'Failed to delete user',
-    });
+  if (!userId) return;
+
+  const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+  try {
+    await toast.promise(
+      axios.delete(`/api/users?id=${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+      {
+        loading: 'Deleting user...',
+        success: 'User deleted successfully',
+        error: 'Failed to delete user',
+      }
+    );
+
     fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
-  };
-  // Handle search
+  } catch (err) {
+    console.error('Delete error:', err);
+    toast.error('Something went wrong while deleting user');
+  }
+};
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     fetchData(0, pagination.pageSize, query, role);
   };
 
-  // Handle role filter change
   const handleRoleChange = (newRole: string) => {
     setRole(newRole);
     fetchData(0, pagination.pageSize, searchQuery, newRole);
   };
 
-  // Handle pagination changes
   const handlePaginationChange = (pageIndex: number, pageSize: number) => {
     setPagination({ pageIndex, pageSize });
     fetchData(pageIndex, pageSize, searchQuery, role);
   };
 
-  // Initial data load
   React.useEffect(() => {
     fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
   }, []);
 
-  // Define columns
   const columns: ColumnDef<any>[] = [
-    // Include the selection column
-    // createSelectionColumn<User>(),
 
     {
       accessorKey: 'fullName',
@@ -137,7 +155,7 @@ export function UserDataTable({ initialData }: UserTableProps) {
               )}
             </div>
             <div className="flex flex-col">
-              <span className="font-medium">admin test</span>
+              <span className="font-medium">{user.name}</span>
               {/* <span className="text-xs text-muted-foreground">{user.email || 'No email'}</span> */}
             </div>
           </div>
@@ -146,35 +164,39 @@ export function UserDataTable({ initialData }: UserTableProps) {
       enableHiding: false,
     },
 
-    // Other columns
     {
       accessorKey: 'email',
       header: 'Email',
       cell: ({ row }) => <div>{row.original?.email || 'N/A'}</div>,
     },
     {
-      accessorKey: 'lastlogin',
+      accessorKey: 'role',
+      header: 'Role',
+      cell: ({ row }) => <div>{row.original?.role || 'N/A'}</div>,
+
+      // const role = row.original?.role || 'user';
+      // return <Badge variant={getRoleBadgeVariant(role)}>{getRoleDisplayName(role)}</Badge>;
+    },
+    {
+      accessorKey: 'Tenant',
+      header: 'Tenant',
+      cell: ({ row }) => <div>{row?.original?.tenant?.name || 'N/A'}</div>,
+    },
+
+    {
+      accessorKey: 'lastLogin',
       header: 'Last Login',
       cell: ({ row }) => (
-        <div>{row.original?.joiningDate ? formatDate(row.original.lastlogin) : 'N/A'}</div>
+        <div>{formatDate(row.original.lastLogin)}</div>
       ),
     },
     {
       accessorKey: 'createdAt',
       header: 'Created at',
       cell: ({ row }) => (
-        <div>{row.original?.joiningDate ? formatDate(row.original.createdAt) : 'N/A'}</div>
+        <div>{formatDate(row.original.createdAt)}</div>
       ),
     },
-    // {
-    //   accessorKey: 'role',
-    //   header: 'Role',
-    //   cell: ({ row }) => {
-    //     const role = row.original?.role || 'user';
-    //     return <Badge variant={getRoleBadgeVariant(role)}>{getRoleDisplayName(role)}</Badge>;
-    //   },
-    // },
-
     // Actions column
     {
       id: 'actions',
@@ -192,9 +214,9 @@ export function UserDataTable({ initialData }: UserTableProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => viewUserDetails(row.original)}>
+            {/* <DropdownMenuItem onClick={() => viewUserDetails(row.original)}>
               View Details
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuItem onClick={() => editUser(row.original)}>Edit User</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -215,7 +237,7 @@ export function UserDataTable({ initialData }: UserTableProps) {
     options: [
       { label: 'Active', value: 'active' },
       { label: 'Disable', value: 'disabled' },
-    
+
     ],
     value: role,
     onChange: handleRoleChange,

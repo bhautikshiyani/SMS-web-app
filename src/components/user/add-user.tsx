@@ -35,12 +35,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import Cookies from 'js-cookie';
 import { PlusIcon } from "lucide-react";
 import { FileUploader } from "../common/profile-uploader";
 import {
   UserAddFormType,
   userAddSchema,
 } from "@/types/validation/validationSchema";
+import { roles } from "@/lib/constants";
 
 const initialValues: UserAddFormType = {
   name: "",
@@ -48,6 +50,7 @@ const initialValues: UserAddFormType = {
   phone: "",
   tenantId: "",
   picture: null,
+  role: "OrgUser",
 };
 
 export function AddUser() {
@@ -72,9 +75,14 @@ export function AddUser() {
   }, []);
 
   async function onSubmit(values: z.infer<typeof userAddSchema>) {
-    console.log("🚀 ~ onSubmit ~ values:", values)
     try {
-      const response = await axios.post("/api/auth/register", values);
+      const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
+      const response = await axios.post("/api/users", values, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.status === 201 || response.status === 200) {
         toast.success("Create User successful! Please log in.");
@@ -106,7 +114,6 @@ export function AddUser() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid gap-4">
-                {/* <div className="sm:col-span-2"> */}
                 <FormField
                   control={form.control}
                   name="picture"
@@ -186,6 +193,33 @@ export function AddUser() {
                 />
                 <FormField
                   control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roles.map((role) => (
+                              <SelectItem key={role.value} value={role.value}>
+                                {role.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {/* <FormField
+                  control={form.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
@@ -196,7 +230,7 @@ export function AddUser() {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button className="cursor-pointer" variant="outline">Cancel</Button>

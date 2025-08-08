@@ -17,46 +17,44 @@ import { Input } from '@/components/ui/input'
 import { emailSchema } from '@/lib/schema/validation-schemas'
 import toast from 'react-hot-toast'
 import AuthLayout from '@/components/layout/auth-layout'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { clearMessages, forgotPassword } from '@/store/slices/authSlice'
+import { useEffect } from 'react'
 
 
-// Schema for email validation
 const formSchema = z.object({
   email: emailSchema,
 })
 
 export default function ForgotPassword() {
+  const dispatch = useAppDispatch()
+  const { loading, error, successMessage } = useAppSelector((state) => state.auth)
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
     },
-  })
+  })  
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      const res = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: values.email }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json()
-        throw new Error(errorData.message || 'Failed to send reset email.')
-      }
-
-      toast.success('Password reset email sent. Please check your inbox.')
-      form.reset()
-    } catch (error: any) {
-      console.error('Error sending password reset email', error)
-      toast.error(error.message || 'Something went wrong.')
-    }
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    dispatch(forgotPassword(values.email))
   }
+  useEffect(() => {
+    if (successMessage) {
+      toast.success(successMessage)
+      form.reset()
+      dispatch(clearMessages())
+    }
+
+    if (error) {
+      toast.error(error)
+      dispatch(clearMessages())
+    }
+  }, [successMessage, error, dispatch, form])
+
 
   return (
-
     <AuthLayout>
       <div className="mb-6 mt-8">
         <h1 className="text-2xl   font-extrabold uppercase !leading-snug text-primary ">Forgot Password</h1>
@@ -79,7 +77,7 @@ export default function ForgotPassword() {
                       type="email"
                       autoComplete="email"
                       {...field}
-                    />
+                    />  
                   </FormControl>
                   <FormMessage />
                 </FormItem>

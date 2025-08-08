@@ -7,6 +7,8 @@ export interface JwtUserPayload {
   tenantId: string;
   iat?: number;
   exp?: number;
+  _id: string;
+
 }
 
 export function verifyJwt(token: string): JwtUserPayload | null {

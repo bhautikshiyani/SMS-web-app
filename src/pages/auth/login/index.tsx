@@ -17,12 +17,16 @@ import Loading from '@/components/common/Loading'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import AuthLayout from '@/components/layout/auth-layout'
 import Cookies from 'js-cookie'
-// import ComponentsAuthLoginForm from '@/components/auth/ComponentsAuthLoginForm'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { clearMessages, loginUser } from '@/store/slices/authSlice'
 
 const formSchema = loginFormSchema
 
 export default function LoginPreview() {
     const router = useRouter()
+    const dispatch = useAppDispatch()
+    const { loading } = useAppSelector((state) => state.auth)
+
     const [isLoading, setIsLoading] = useState(false)
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -37,7 +41,6 @@ export default function LoginPreview() {
         try {
             const res = await axios.post('/api/auth/login', values)
             const { token } = res.data
-            console.log("🚀 ~ onSubmit ~ token:", res)
             Cookies.set(process.env.NEXT_PUBLIC_TOKEN_KEY, token);
             toast.success('Login successful!')
             router.push('/')
@@ -49,8 +52,32 @@ export default function LoginPreview() {
             setIsLoading(false)
         }
     }
+    async function handleGoogleSuccess(credentialResponse: any) {
+        setIsLoading(true)
+        try {
+            console.log('Google login request body:', process.env.GOOGLE_CLIENT_ID)
 
-    // Handler for Google login success
+            const res = await axios.post('/api/auth/google', {
+                token: credentialResponse.credential,
+            })
+            const { token } = res.data
+
+
+            toast.success('Google login successful!')
+            router.push('/messages')
+        } catch (error: any) {
+            // console.error('Google login failed:', error)
+            toast.error(error?.response?.data?.message || 'Google login failed')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    // // Handler for Google login failure
+    // function handleGoogleError() {
+    //     toast.error('Google login failed. Please try again.')
+    // }
+
     // async function handleGoogleSuccess(credentialResponse: any) {
     //     setIsLoading(true)
     //     try {
@@ -60,22 +87,19 @@ export default function LoginPreview() {
     //             token: credentialResponse.credential,
     //         })
     //         const { token } = res.data
-
-
+    //         localStorage.setItem('token', token)
     //         toast.success('Google login successful!')
     //         router.push('/messages')
     //     } catch (error: any) {
-    //         // console.error('Google login failed:', error)
     //         toast.error(error?.response?.data?.message || 'Google login failed')
     //     } finally {
     //         setIsLoading(false)
     //     }
     // }
 
-    // // Handler for Google login failure
-    // function handleGoogleError() {
-    //     toast.error('Google login failed. Please try again.')
-    // }
+    function handleGoogleError() {
+        toast.error('Google login failed. Please try again.')
+    }
 
     return (
         <>

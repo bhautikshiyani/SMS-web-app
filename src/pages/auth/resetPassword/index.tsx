@@ -17,6 +17,8 @@ import { PasswordInput } from '@/components/ui/password-input'
 import { resetPasswordFormSchema } from '@/lib/schema/validation-schemas'
 import toast from 'react-hot-toast'
 import AuthLayout from '@/components/layout/auth-layout'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { clearMessages, resetPassword } from '@/store/slices/authSlice'
 
 
 const formSchema = resetPasswordFormSchema
@@ -26,6 +28,8 @@ export default function ResetPassword() {
 
     const router = useRouter()
     const token = searchParams.get('token') || ''
+    const dispatch = useAppDispatch()
+    const { loading } = useAppSelector((state) => state.auth)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -41,94 +45,84 @@ export default function ResetPassword() {
             return
         }
 
-        try {
-            const res = await fetch(`/api/auth/resetPassword?token=${token}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    newPassword: values.password,
-                    confirmPassword: values.confirmPassword,
-                }),
+        const result: any = await dispatch(
+            resetPassword({
+                token,
+                password: values.password,
+                confirmPassword: values.confirmPassword,
             })
+        )
 
-            const data = await res.json()
-
-            if (!res.ok) {
-                toast.error(data.message || 'Failed to reset the password.')
-                return
-            }
-
+        if (resetPassword.fulfilled.match(result)) {
             toast.success('Password reset successful! You can now log in.')
+            dispatch(clearMessages())
             router.push('/auth/login')
-        } catch (error) {
-            console.error('Error resetting password', error)
-            toast.error('Failed to reset the password. Please try again.')
+        } else {
+            toast.error(result.payload || 'Failed to reset the password.')
         }
     }
 
 
     return (
-      
-                    <AuthLayout>
-                       <div className="mb-10">
-                        <h1 className="text-2xl md:text-3xl font-extrabold uppercase !leading-snug text-primary ">Reset Password</h1>
-                        <p className="text-base font-bold leading-normal text-white-dark">Enter your new password to reset your password.</p>
-                    </div> 
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                                <div className="grid gap-4">
-                                    {/* New Password Field */}
-                                    <FormField
-                                        control={form.control}
-                                        name="password"
-                                        render={({ field }) => (
-                                            <FormItem className="grid gap-2">
-                                                <FormLabel htmlFor="password">New Password</FormLabel>
-                                                <FormControl>
-                                                    <PasswordInput
-                                                        id="password"
-                                                        placeholder="******"
-                                                        autoComplete="new-password"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
 
-                                    {/* Confirm Password Field */}
-                                    <FormField
-                                        control={form.control}
-                                        name="confirmPassword"
-                                        render={({ field }) => (
-                                            <FormItem className="grid gap-2">
-                                                <FormLabel htmlFor="confirmPassword">
-                                                    Confirm Password
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <PasswordInput
-                                                        id="confirmPassword"
-                                                        placeholder="******"
-                                                        autoComplete="new-password"
-                                                        {...field}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+        <AuthLayout>
+            <div className="mb-10">
+                <h1 className="text-2xl md:text-3xl font-extrabold uppercase !leading-snug text-primary ">Reset Password</h1>
+                <p className="text-base font-bold leading-normal text-white-dark">Enter your new password to reset your password.</p>
+            </div>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                    <div className="grid gap-4">
+                        {/* New Password Field */}
+                        <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                                <FormItem className="grid gap-2">
+                                    <FormLabel htmlFor="password">New Password</FormLabel>
+                                    <FormControl>
+                                        <PasswordInput
+                                            id="password"
+                                            placeholder="******"
+                                            autoComplete="new-password"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-                                    <Button type="submit" className="w-full">
-                                        Reset Password
-                                    </Button>
-                                </div>
-                            </form>
-                        </Form>
-                    </AuthLayout>
+                        {/* Confirm Password Field */}
+                        <FormField
+                            control={form.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                                <FormItem className="grid gap-2">
+                                    <FormLabel htmlFor="confirmPassword">
+                                        Confirm Password
+                                    </FormLabel>
+                                    <FormControl>
+                                        <PasswordInput
+                                            id="confirmPassword"
+                                            placeholder="******"
+                                            autoComplete="new-password"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
-              
+                        <Button type="submit" className="w-full">
+                            Reset Password
+                        </Button>
+                    </div>
+                </form>
+            </Form>
+        </AuthLayout>
+
+
     )
 }
