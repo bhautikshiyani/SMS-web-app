@@ -28,7 +28,7 @@ const formSchema = z.object({
 
 export default function ForgotPassword() {
   const dispatch = useAppDispatch()
-  const { loading, error, successMessage } = useAppSelector((state) => state.auth)
+  const {  error, successMessage } = useAppSelector((state) => state.auth)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

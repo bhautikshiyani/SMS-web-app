@@ -17,15 +17,14 @@ import Loading from '@/components/common/Loading'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import AuthLayout from '@/components/layout/auth-layout'
 import Cookies from 'js-cookie'
-import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { clearMessages, loginUser } from '@/store/slices/authSlice'
+// import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
 const formSchema = loginFormSchema
 
 export default function LoginPreview() {
     const router = useRouter()
-    const dispatch = useAppDispatch()
-    const { loading } = useAppSelector((state) => state.auth)
+    // const dispatch = useAppDispatch()
+    // const { loading } = useAppSelector((state) => state.auth)
 
     const [isLoading, setIsLoading] = useState(false)
     const form = useForm<z.infer<typeof formSchema>>({
@@ -52,26 +51,26 @@ export default function LoginPreview() {
             setIsLoading(false)
         }
     }
-    async function handleGoogleSuccess(credentialResponse: any) {
-        setIsLoading(true)
-        try {
-            console.log('Google login request body:', process.env.GOOGLE_CLIENT_ID)
+    // async function handleGoogleSuccess(credentialResponse: any) {
+    //     setIsLoading(true)
+    //     try {
+    //         console.log('Google login request body:', process.env.GOOGLE_CLIENT_ID)
 
-            const res = await axios.post('/api/auth/google', {
-                token: credentialResponse.credential,
-            })
-            const { token } = res.data
+    //         const res = await axios.post('/api/auth/google', {
+    //             token: credentialResponse.credential,
+    //         })
+    //         const { token } = res.data
 
 
-            toast.success('Google login successful!')
-            router.push('/messages')
-        } catch (error: any) {
-            // console.error('Google login failed:', error)
-            toast.error(error?.response?.data?.message || 'Google login failed')
-        } finally {
-            setIsLoading(false)
-        }
-    }
+    //         toast.success('Google login successful!')
+    //         router.push('/messages')
+    //     } catch (error: any) {
+    //         // console.error('Google login failed:', error)
+    //         toast.error(error?.response?.data?.message || 'Google login failed')
+    //     } finally {
+    //         setIsLoading(false)
+    //     }
+    // }
 
     // // Handler for Google login failure
     // function handleGoogleError() {
@@ -97,13 +96,13 @@ export default function LoginPreview() {
     //     }
     // }
 
-    function handleGoogleError() {
-        toast.error('Google login failed. Please try again.')
-    }
+    // function handleGoogleError() {
+    //     toast.error('Google login failed. Please try again.')
+    // }
 
     return (
         <>
-            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+            {/* <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}> */}
                 <AuthLayout>
                     <div className="mb-10">
                         <h1 className="text-2xl md:text-3xl font-extrabold uppercase !leading-snug text-primary ">Sign in</h1>
@@ -179,7 +178,7 @@ export default function LoginPreview() {
 
                 </AuthLayout>
 
-            </GoogleOAuthProvider>
+            {/* </GoogleOAuthProvider> */}
 
 
         </>

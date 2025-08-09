@@ -23,7 +23,7 @@
 // export async function middleware(req: NextRequest): Promise<NextResponse> {
 //   const pathname = req.nextUrl.pathname;
 //   const requestHeaders = new Headers(req.headers);
-  
+
 //   requestHeaders.set('x-api-url', process.env.NEXT_PUBLIC_API_URL || '');
 
 //   if (isPublicPath(pathname)) {
@@ -36,7 +36,7 @@
 //   }
 
 //   const token = req.cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY || '')?.value;
- 
+
 
 //   if (!token) {
 //     return NextResponse.redirect(new URL('/auth/login', req.url));
@@ -74,7 +74,7 @@
 //     //     return NextResponse.redirect(new URL('/404', req.url));
 //     //   }
 //     // }
-    
+
 //     // if (pathname.startsWith('/admin')) {
 //     //   const validEmployeePaths = ['/admin','/admin/add', '/admin/edit'];
 //     //   const isExactValidPage = validEmployeePaths.includes(pathname);
@@ -83,7 +83,7 @@
 //     //     return NextResponse.redirect(new URL('/404', req.url));
 //     //   }
 //     // }
-    
+
 //     const allowedPaths = roleAccessMap[role];
 //     const isAllowed = allowedPaths.some(
 //       (allowedPath: string) => pathname === allowedPath || pathname.startsWith(`${allowedPath}/`)
@@ -99,7 +99,7 @@
 //         headers: requestHeaders,
 //       },
 //     });
-    
+
 //     res.cookies.set('userRole', role, {
 //       path: '/',
 //       httpOnly: false,
@@ -176,20 +176,25 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
 
-    // 🔁 Redirect from `/` to role-based home
     if (pathname === '/') {
       const redirectPath = roleHomeMap[role] || '/messages';
-      console.log("🚀 ~ middleware ~ redirectPath:", redirectPath)
       return NextResponse.redirect(new URL(redirectPath, req.url));
     }
-const cleanPathname = pathname.replace(/\/+$/, '') || '/';
-    // ✅ Check route access
+    const cleanPathname = pathname.replace(/\/+$/, '') || '/';
     const allowedPaths = roleAccessMap[role];
-   
-const isAllowed = allowedPaths.some(
-  (allowedPath: string) =>
-    cleanPathname === allowedPath || cleanPathname.startsWith(`${allowedPath}/`)
-)
+
+    const isAllowed = allowedPaths.some(
+      (allowedPath: string) =>
+        cleanPathname === allowedPath || cleanPathname.startsWith(`${allowedPath}/`)
+    )
+    // const isAllowed = allowedPaths.some((allowedPath: string) => {
+    //   if (allowedPath.includes("[id]")) {
+    //     const regex = new RegExp("^" + allowedPath.replace("[id]", "[^/]+") + "$");
+    //     return regex.test(cleanPathname);
+    //   }
+
+    //   return cleanPathname === allowedPath || cleanPathname.startsWith(`${allowedPath}/`);
+    // });
 
     if (!isAllowed) {
       return NextResponse.redirect(new URL('/404', req.url));

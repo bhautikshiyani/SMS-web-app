@@ -29,7 +29,7 @@ export default function ResetPassword() {
     const router = useRouter()
     const token = searchParams.get('token') || ''
     const dispatch = useAppDispatch()
-    const { loading } = useAppSelector((state) => state.auth)
+    // const { loading } = useAppSelector((state) => state.auth)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),

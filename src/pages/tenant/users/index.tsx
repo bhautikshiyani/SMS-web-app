@@ -5,20 +5,24 @@ import { AddUser } from "@/components/admin/user/add-user";
 import { UserDataTable } from "@/components/admin/user/user-table";
 import { UserAddFormType } from "@/types/validation/validationSchema";
 import { PlusIcon } from "lucide-react";
-const initialValues: UserAddFormType = {
-  name: "",
-  email: "",
-  phone: "",
-  tenantId: "",
-  picture: null,
-  role: "OrgUser",
-};
+import { useSearchParams } from "next/navigation";
+
 const UserPage = () => {
   const [openUserModal, setOpenUserModal] = useState(false);
+  const searchParams = useSearchParams();
+  const tenantId = searchParams.get("tenantId");
+  console.log("🚀 ~ UserPage ~ tenantId:", tenantId)
+  const initialValues: UserAddFormType = {
+    name: "",
+    email: "",
+    // phone: "",
+    tenantId: tenantId ?? "",
+    picture: null,
+    role: "OrgUser",
+  };
   const [editingUser, setEditingUser] =
     useState<Partial<UserAddFormType> | null>(initialValues);
-    const [reloadKey, setReloadKey] = useState(0);
-    console.log("🚀 ~ UserPage ~ editingUser:", editingUser)
+  const [reloadKey, setReloadKey] = useState(0);
 
   const handleAddClick = () => {
     setEditingUser(initialValues);
@@ -43,6 +47,7 @@ const UserPage = () => {
       </div>
 
       <UserDataTable
+      tenantId={tenantId}
         reloadKey={reloadKey}
         onEditUser={(user) => {
           setEditingUser(user);

@@ -36,23 +36,36 @@ import Cookies from "js-cookie";
 import { Loader2 } from "lucide-react";
 import { FileUploader } from "../../common/profile-uploader";
 import {
-  UserAddFormType,
-  userAddSchema,
+  GroupAddFormType,
+  groupAddSchema,
 } from "@/types/validation/validationSchema";
-import { roles } from "@/lib/constants";
+import MultipleSelector from "@/components/ui/multiple-selector";
+import { PhoneInput } from "@/components/ui/phone-input";
 
-interface AddUserProps {
+interface AddGroupProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  initialData?: Partial<UserAddFormType & { _id?: string }>;
+  initialData?: Partial<GroupAddFormType & { _id?: string }>;
   onSuccess?: () => void;
 }
-
-export function AddUser({ open, setOpen, initialData, onSuccess }: AddUserProps) {
+const OPTIONS: any[] = [
+  { label: 'nextjs', value: 'Nextjs' },
+  { label: 'React', value: 'react' },
+  { label: 'Remix', value: 'remix' },
+  { label: 'Vite', value: 'vite' },
+  { label: 'Nuxt', value: 'nuxt' },
+  { label: 'Vue', value: 'vue' },
+  { label: 'Svelte', value: 'svelte' },
+  { label: 'Angular', value: 'angular' },
+  { label: 'Ember', value: 'ember', disable: true },
+  { label: 'Gatsby', value: 'gatsby', disable: true },
+  { label: 'Astro', value: 'astro' },
+];
+export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProps) {
   const [tenants, setTenants] = useState<{ _id: string; name: string }[]>([]);
 
-  const form = useForm<UserAddFormType>({
-    resolver: zodResolver(userAddSchema),
+  const form = useForm<GroupAddFormType>({
+    resolver: zodResolver(groupAddSchema),
     defaultValues: initialData,
   });
 
@@ -75,13 +88,14 @@ export function AddUser({ open, setOpen, initialData, onSuccess }: AddUserProps)
         const res = await axios.get("/api/tenants");
         setTenants(res.data.data);
       } catch (err) {
+        console.log("🚀 ~ fetchTenants ~ err:", err)
         toast.error("Unable to load tenants");
       }
     }
     fetchTenants();
   }, []);
 
-  async function onSubmit(values: z.infer<typeof userAddSchema>) {
+  async function onSubmit(values: z.infer<typeof groupAddSchema>) {
     const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
     try {
       if (initialData?._id) {
@@ -132,7 +146,7 @@ export function AddUser({ open, setOpen, initialData, onSuccess }: AddUserProps)
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Group Name</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} />
                   </FormControl>
@@ -141,13 +155,37 @@ export function AddUser({ open, setOpen, initialData, onSuccess }: AddUserProps)
               )}
             />
             <FormField
-              control={control}
-              name="email"
+              control={form.control}
+              name="assignedUsers"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Add User</FormLabel>
                   <FormControl>
-                    <Input placeholder="johndoe@mail.com" {...field} />
+                    <MultipleSelector
+                      defaultOptions={OPTIONS}
+                      placeholder="Select frameworks you like..."
+                      emptyIndicator={
+                        <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
+                          no results found.
+                        </p>
+                      }
+                      value={Array.isArray(field.value) ? field.value : []}
+                      onChange={field.onChange}
+                      ref={field.ref}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <PhoneInput {...field} defaultCountry="IN" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -168,30 +206,6 @@ export function AddUser({ open, setOpen, initialData, onSuccess }: AddUserProps)
                         {tenants.map((tenant) => (
                           <SelectItem key={tenant._id} value={tenant._id}>
                             {tenant.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            {role.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

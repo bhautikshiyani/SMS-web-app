@@ -3,7 +3,6 @@
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreVerticalIcon } from "lucide-react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +17,7 @@ import Cookies from "js-cookie";
 import axios from "axios";
 import { formatDate, getImageSrc } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 interface TenantTableProps {
   reloadKey?: number;
@@ -26,6 +26,7 @@ interface TenantTableProps {
 
 export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
   const [loading, setLoading] = React.useState(false);
+  const router = useRouter();
   const [tenantData, setTenantData] = React.useState<any>({
     tenants: [],
     totalTenants: 0,
@@ -51,7 +52,7 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
         },
         params: {
           search: searchTerm,
-          page: pagination.pageIndex + 1, // pageIndex is 0-based, backend expects 1-based
+          page: pagination.pageIndex + 1,
           limit: pagination.pageSize,
         },
       });
@@ -256,7 +257,7 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       searchPlaceholder="Search tenants..."
       onSearch={(val: string) => {
         setSearchTerm(val);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 })); // Reset to first page on search
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
       }}
       enableSelection={false}
       enableColumnVisibility={true}
@@ -267,6 +268,12 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       getRowId={(row) => row._id || String(Math.random())}
       emptyMessage="No tenants found."
       loadingMessage="Loading tenants..."
+
+      // ✅ Add this to handle row click
+      onRowClick={(row) => {
+        const id = row._id;
+        if (id) router.push(`/tenant/users?tenantId=${id}`);
+      }}
     />
   );
 }

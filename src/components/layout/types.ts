@@ -31,6 +31,7 @@ interface SidebarData {
   // teams: Team;
   navGroups: NavGroup[];
   footer: NavGroup[];
+  tenantGroups?: NavGroup[];
 
 }
 

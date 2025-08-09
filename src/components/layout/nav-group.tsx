@@ -138,11 +138,33 @@ const SidebarMenuCollapsedDropdown = ({ item, href }: { item: NavCollapsible; hr
   );
 };
 
+// function checkIsActive(href: string, item: NavItem, mainNav = false) {
+//   console.log("🚀 ~ checkIsActive ~ href: string, item: NavItem:", href, item)
+//   return (
+//     href === item.url || // /endpint?search=param
+//     href.split('?')[0] === item.url || // endpoint
+//     !!item?.items?.filter((i) => i.url === href).length || // if child nav is active
+//     (mainNav && href.split('/')[1] !== '' && href.split('/')[1] === item?.url?.split('/')[1])
+//   );
+// }
+
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
+  const cleanHref = href?.split('?')[0]; // Remove query params
+  const cleanItemUrl = item.url?.split('?')[0]; // Also clean item URL
+
+  if (!cleanHref || !cleanItemUrl) return false;
+
+  // Debug logs (optional)
+  console.log("🧭 checkIsActive:", {
+    cleanHref,
+    cleanItemUrl,
+    originalHref: href,
+    itemUrl: item.url,
+  });
+
   return (
-    href === item.url || // /endpint?search=param
-    href.split('?')[0] === item.url || // endpoint
-    !!item?.items?.filter((i) => i.url === href).length || // if child nav is active
-    (mainNav && href.split('/')[1] !== '' && href.split('/')[1] === item?.url?.split('/')[1])
+    cleanHref === cleanItemUrl || // exact match without query
+    !!item.items?.some((i) => cleanHref === i.url.split('?')[0]) || // check subItems
+    (mainNav && cleanHref.split('/')[1] === cleanItemUrl.split('/')[1])
   );
 }

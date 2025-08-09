@@ -9,7 +9,7 @@ export const roleBasedNav: Record<UserRole, string[]> = {
 
 // Flattened route map by title
 export const roleAccessMap: Record<UserRole, string[]> = {
-  SuperAdmin: ["/", "/dashboard", "/tenant", "/users"],
+  SuperAdmin: ["/", "/dashboard", "/tenant","/tenant/users", "/tenant/groups", "/tenant/settings", ],
   Admin: ["/", "/messages", "/contacts", "/voicemail", "/phone", "/settings"],
   OrgManager: [
     "/",

@@ -24,7 +24,7 @@ interface UserTableProps {
   tenantId?: string | null;
   onEditUser: (user: any) => void;
 }
-export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProps) {
+export function GroupDataTable({ reloadKey, tenantId, onEditUser }: UserTableProps) {
   // const dispatch = useAppDispatch();
   const [loading, setLoading] = React.useState(false);
   const [userData, setUserData] = React.useState<any>({
@@ -58,6 +58,7 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
       const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
 
       const params = new URLSearchParams();
+      console.log("🚀 ~ fetchData ~ tenantId:", tenantId)
       if (tenantId) params.append("tenantId", tenantId);
       params.append("page", (pageIndex + 1).toString());
       params.append("limit", pageSize.toString());
@@ -71,14 +72,14 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
         },
       });
 
-      const { data, pagination } = response.data;
+      const { pagination } = response.data;
 
       setUserData({
-        users: data,
+        users:[] ,
         totalUsers: pagination.total,
-        page: pagination.page,
-        limit: pagination.limit,
-        totalPages: pagination.totalPages,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
       });
 
       setPagination({
@@ -139,27 +140,6 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
   React.useEffect(() => {
     fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
   }, []);
-  const [switchLoading, setSwitchLoading] = React.useState(false);
-
-  const handleToggle = async (user:any) => {
-    setSwitchLoading(true);
-    const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
-
-    try {
-      await axios.put(`/api/users?id=${user._id}`, {
-        isActive: !user.isActive,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      toast.success(`User ${!user.isActive ? "activated" : "deactivated"} successfully`);
-      fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
-    } catch (error) {
-      toast.error("Failed to update user status");
-    } finally {
-      setSwitchLoading(false);
-    }
-  };
 
   const columns: ColumnDef<any>[] = [
     {
@@ -208,21 +188,7 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
       header: "Role",
       cell: ({ row }) => <div>{row.original?.role || "N/A"}</div>,
     },
-    {
-      accessorKey: "isActive",
-      header: "Status",
-      cell: ({ row }) => {
-        const user = row.original;
 
-        return (
-          <Switch
-            checked={user.isActive}
-            disabled={switchLoading}
-            onCheckedChange={() => handleToggle(user)}
-          />
-        );
-      },
-    },
     // {
     //   accessorKey: "lastLogin",
     //   header: "Last Login",
@@ -295,7 +261,7 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
         onPaginationChange={handlePaginationChange}
         getRowId={(row) => row._id || String(Math.random())}
         emptyMessage="No users found."
-        loadingMessage="Loading user..."
+        loadingMessage="Loading groups..."
       />
     </>
   );

@@ -1,8 +1,10 @@
 "use client";
+
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -11,82 +13,110 @@ import {
 import { NavGroup } from "@/components/layout/nav-group";
 import { TeamSwitcher } from "@/components/layout/team-switcher";
 import { sidebarData } from "./data/sidebar-data";
-import { LogOut } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { roleBasedNav } from "./data/RolebaseNavigation";
 import { UserRole } from "@/types/user";
 import dynamic from "next/dynamic";
+
 const LoadingScreen = dynamic(() => import('@/components/common/LoadingScreen'), {
   ssr: false,
 });
+
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: any | null;
 }
-
+function injectTenantId(group: any, tenantId: string): any {
+  return {
+    ...group,
+    items: group.items.map((item:any) => ({
+      ...item,
+      url: item.url.includes('?')
+        ? `${item.url}&tenantId=${tenantId}`
+        : `${item.url}?tenantId=${tenantId}`,
+    })),
+  };
+}
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
   const router = useRouter();
-  
+  const searchParams = useSearchParams();
+  const tenantId = searchParams.get("tenantId");
+
+  const role = user?.role as UserRole | undefined;
+  if (!role) return <LoadingScreen />;
+
   const handleLogout = () => {
-    // dispatch(logout());
     toast.success("Logged out successfully");
     router.push("/auth/login");
   };
-  const role = user?.role as UserRole | undefined;
-  if (!role) {
-    return <LoadingScreen />;
-  }
+
   const filteredNavMain = sidebarData.navGroups
     .map((group) => {
       const filteredItems = group.items.filter((item) => {
-        if (roleBasedNav[role]?.includes(item.title)) {
-          return true;
-        }
-
+        if (roleBasedNav[role]?.includes(item.title)) return true;
         if (item.items) {
-          const hasVisibleSubItem = item.items.some((subItem) =>
-            roleBasedNav[role]?.includes(subItem.title)
-          );
-          return hasVisibleSubItem;
+          return item.items.some((sub) => roleBasedNav[role]?.includes(sub.title));
         }
-
         return false;
       });
 
-      return {
-        ...group,
-        items: filteredItems,
-      };
+      return { ...group, items: filteredItems };
     })
     .filter((group) => group.items.length > 0);
+
   const filteredFooter = sidebarData.footer
     .map((footerGroup) => {
       const filteredItems = footerGroup.items.filter((item) =>
         roleBasedNav[role]?.includes(item.title)
       );
-
-      return {
-        ...footerGroup,
-        items: filteredItems,
-      };
+      return { ...footerGroup, items: filteredItems };
     })
-    .filter((footerGroup) => footerGroup.items.length > 0);
+    .filter((group) => group.items.length > 0);
+
+
+
   return (
-    <Sidebar 
-        suppressHydrationWarning={true}
-    
-    collapsible="icon" variant="floating" {...props}>
+    <Sidebar collapsible="icon" variant="floating" {...props}>
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
+
       <SidebarContent>
-        {filteredNavMain.map((props) => (
-          <NavGroup key={props.title} {...props} />
-        ))}
+        {(role === "SuperAdmin" && tenantId)
+          ?
+          <>
+            <SidebarGroup className="-mb-2.5">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    className="cursor-pointer"
+                    onClick={() => router.push('/tenant')}
+                    tooltip={"Back to Home"}
+                  >
+                    <ArrowLeft />
+                    <span>Back to Tenant</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
+            {sidebarData.tenantGroups?.map((group) => {
+              const updatedGroup = injectTenantId(group, tenantId);
+              return <NavGroup key={updatedGroup.title} {...updatedGroup} />;
+            })
+            }
+          </>
+
+
+          : filteredNavMain.map((group) => (
+            <NavGroup key={group.title} {...group} />
+          ))}
+
       </SidebarContent>
+
       <SidebarFooter>
-        {filteredFooter.map((props) => (
-          <NavGroup className="p-0" key={props.title} {...props} />
+        {filteredFooter.map((group) => (
+          <NavGroup key={group.title} className="p-0" {...group} />
         ))}
         <SidebarMenu>
           <SidebarMenuItem>

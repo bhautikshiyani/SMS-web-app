@@ -6,8 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Cookies from "js-cookie";
-import { z } from "zod";
-
 import {
   Dialog,
   DialogClose,
@@ -26,7 +24,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FileUploader } from "@/components/common/profile-uploader";

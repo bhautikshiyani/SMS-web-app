@@ -21,12 +21,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const { page = 1, limit = 10, search = '' } = req.query;
+      const { page = 1, limit = 10, search = '', tenantId } = req.query;
+
       const pageNumber = parseInt(page as string);
       const limitNumber = parseInt(limit as string);
       const skip = (pageNumber - 1) * limitNumber;
 
-      const filter: any = { isDeleted: false };
+      const filter: any = { isDeleted: false,tenantId:tenantId };
+
+      // if (tenantId) {
+      //   filter.tenantId = tenantId;
+      // }
 
       if (search) {
         const searchRegex = new RegExp(search as string, 'i');
@@ -74,7 +79,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Error fetching users:', err);
       return res.status(500).json({ status: 'error', message: err.message || 'Internal Server Error' });
     }
-  } if (req.method === 'POST') {
+  }
+
+  if (req.method === 'POST') {
     const currentUser = verifyJwt(token);
     if (!currentUser || (currentUser.role !== 'SuperAdmin' && currentUser.role !== 'Admin')) {
       return res.status(403).json({ status: 'error', message: 'Forbidden: insufficient permissions' });
@@ -113,6 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         tempPasswordExpiresAt,
         isDeleted: false,
         lastLogin: null,
+        isActive: true,      
       });
 
       const transporter = nodemailer.createTransport({
@@ -150,6 +158,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ status: 'error', message: err.message || 'Internal Server Error' });
     }
   }
+
   if (req.method === 'PUT') {
     const currentUser = verifyJwt(token);
     const { id } = req.query;
@@ -166,10 +175,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const currentUserId = currentUser?.userId.toString();
-
       const targetUserId = userToUpdate._id.toString();
-
-      console.log('Current User ID:', currentUserId, targetUserId);
 
       if (currentUserId !== targetUserId && currentUser?.role !== 'SuperAdmin') {
         return res.status(403).json({
@@ -178,6 +184,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+    
       if (updateData.role) {
         if (currentUser?.role !== 'SuperAdmin') {
           return res.status(403).json({
@@ -203,10 +210,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
+
+      if (typeof updateData.isActive === 'boolean') {
+        if (currentUserId !== targetUserId && currentUser?.role !== 'SuperAdmin') {
+          return res.status(403).json({
+            status: 'error',
+            message: 'Forbidden: Only SuperAdmin can change other users\' active status',
+          });
+        }
+      }
+
       const updateObject = {
         ...updateData,
         updatedAt: new Date()
       };
+      console.log("🚀 ~ handler ~ updateObject:", updateObject)
 
       const updatedUser = await User.findByIdAndUpdate(
         id,
@@ -231,6 +249,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
   }
+
   if (req.method === 'DELETE') {
     const currentUser = verifyJwt(token);
 

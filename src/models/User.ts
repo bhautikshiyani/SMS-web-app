@@ -10,6 +10,7 @@ interface IUser extends Document {
   tempPasswordExpiresAt?: Date;
   isDeleted: boolean;
   lastLogin?: Date | null;
+  isActive: boolean;         
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,9 +26,10 @@ const userSchema = new Schema<IUser>(
     tempPasswordExpiresAt: { type: Date },
     isDeleted: { type: Boolean, default: false },
     lastLogin: { type: Date, default: null },
+    isActive: { type: Boolean, default: true },     
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

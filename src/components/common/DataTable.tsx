@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import * as React from 'react';
@@ -88,7 +87,7 @@ interface DataTableProps<TData, TValue> {
 
   // Row identification
   getRowId?: (row: TData) => string;
-
+    onRowClick?: (row: TData) => void;
   // Empty state
   emptyMessage?: string;
   // Loading message
@@ -119,6 +118,7 @@ export function DataTable<TData, TValue>({
   children,
   dateRange,
   onDateChange,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   // Table state
   const [rowSelection, setRowSelection] = React.useState({});
@@ -204,12 +204,22 @@ export function DataTable<TData, TValue>({
       : {}),
   });
 
-  // Render a draggable row
-  function DraggableRow({ row }: { row: Row<TData> }) {
+  function DraggableRow({ row, onRowClick }: { row: Row<TData>; onRowClick?: (row: TData) => void }) {
+    const rowData = row.original;
+    const clickable = !!onRowClick;
+
     return (
       <TableRow
         data-state={row.getIsSelected() && 'selected'}
-        className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+        className={cn(
+          clickable && 'cursor-pointer hover:bg-muted/50',
+          'relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80'
+        )}
+        onClick={() => {
+          if (clickable) {
+            onRowClick?.(rowData);
+          }
+        }}
       >
         {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id}>
@@ -219,6 +229,7 @@ export function DataTable<TData, TValue>({
       </TableRow>
     );
   }
+
 
   return (
     <>
@@ -361,7 +372,9 @@ export function DataTable<TData, TValue>({
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => <DraggableRow key={row.id} row={row} />)
+              table.getRowModel().rows.map((row) => (
+                <DraggableRow key={row.id} row={row} onRowClick={onRowClick} />
+              ))
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
