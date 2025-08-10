@@ -2,9 +2,12 @@ import { Schema, model, models } from 'mongoose';
 
 export interface ITenant {
   name: string;
-  logoUrl?: string;
-  sinchApiKey: string;
-  sinchApiSecret: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  // logoUrl?: string;
+  // sinchApiKey: string;
+  // sinchApiSecret: string;
   featureToggles: {
     messages: boolean;
     contacts: boolean;
@@ -20,9 +23,12 @@ export interface ITenant {
 const TenantSchema = new Schema<ITenant>(
   {
     name: { type: String, required: true },
-    logoUrl: { type: String, default: '' },
-    sinchApiKey: { type: String, required: true },
-    sinchApiSecret: { type: String, required: true },
+    email: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    address: { type: String, default: '' },
+    // logoUrl: { type: String, default: '' },
+    // sinchApiKey: { type: String, required: true },
+    // sinchApiSecret: { type: String, required: true },
     featureToggles: {
       messages: { type: Boolean, default: true },
       contacts: { type: Boolean, default: true },

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreVerticalIcon } from "lucide-react";
+import { Delete, MoreVerticalIcon, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -111,17 +111,6 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
         const tenant = row.original;
         return (
           <div className="flex items-center gap-3">
-            {tenant.logoUrl ? (
-              <img
-                src={getImageSrc(tenant?.logoUrl)}
-                alt="Tenant logo"
-                width={32}
-                height={32}
-                className="h-8 w-8 rounded object-cover"
-              />
-            ) : (
-              <div className="h-8 w-8 rounded bg-muted" />
-            )}
             <span>{tenant.name}</span>
           </div>
         );
@@ -133,9 +122,14 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       cell: ({ row }) => row.original.retentionPeriodYears ?? "N/A",
     },
     {
-      accessorKey: "sinchApiKey",
-      header: "Sinch API Key",
-      cell: ({ row }) => row.original.sinchApiKey || "N/A",
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => row.original.email || "N/A",
+    },
+    {
+      accessorKey: "phone",
+      header: "phone",
+      cell: ({ row }) => row.original.phone || "N/A",
     },
     {
       id: "messages",
@@ -222,27 +216,20 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="size-8">
-              <MoreVerticalIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEditTenant(row.original)}>
-              Edit Tenant
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => row.original._id && deleteTenant(row.original._id)}
-              className="text-red-600"
-            >
-              Delete Tenant
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          size="icon"
+          className="cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation(); // ✅ Prevent row click
+            row.original._id && deleteTenant(row.original._id);
+          }}
+        >
+          <Trash />
+          <span className="sr-only">Delete Tenant</span>
+        </Button>
       ),
-    },
+    }
+
   ];
 
   return (

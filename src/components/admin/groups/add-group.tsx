@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -89,7 +89,6 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
         setTenants(res.data.data);
       } catch (err) {
         console.log("🚀 ~ fetchTenants ~ err:", err)
-        toast.error("Unable to load tenants");
       }
     }
     fetchTenants();

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import Tenant from '@/models/Tenant';
 import { dbConnect } from '@/lib/db';
 import { verifyJwt } from '@/lib/auth';
+import mongoose from 'mongoose';
 
 function sendError(res: NextApiResponse, statusCode: number, message: string) {
   return res.status(statusCode).json({
@@ -16,7 +17,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await dbConnect();
 
     if (req.method === 'GET') {
-      const { search = '', page = '1', limit = '10' } = req.query;
+      const { id, search = '', page = '1', limit = '10' } = req.query;
+      if (id && !mongoose.Types.ObjectId.isValid(id as string)) {
+        return sendError(res, 400, 'Invalid tenant ID format');
+      }
+      if (id) {
+        const tenant = await Tenant.findOne({ _id: id, isDeleted: false });
+        if (!tenant) return sendError(res, 404, 'Tenant not found');
+        return res.status(200).json({ status: 'success', data: tenant });
+      }
 
       const pageNumber = parseInt(page as string, 10) || 1;
       const pageSize = parseInt(limit as string, 10) || 10;
@@ -54,17 +63,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'POST') {
-      const { name, logoUrl, sinchApiKey, sinchApiSecret, featureToggles, retentionPeriodYears } = req.body;
+      const { name, email, phone, address, featureToggles, retentionPeriodYears } = req.body;
 
-      if (!name || !sinchApiKey || !sinchApiSecret) {
-        return sendError(res, 400, 'Missing required fields: name, sinchApiKey, sinchApiSecret');
+      if (!name) {
+        return sendError(res, 400, 'Missing required fields: name');
       }
 
       const tenant = new Tenant({
         name,
-        logoUrl: logoUrl || '',
-        sinchApiKey,
-        sinchApiSecret,
+        email: email || '',
+        phone: phone || '',
+        address: address || '',
+        // logoUrl: logoUrl || '',
+        // sinchApiKey,
+        // sinchApiSecret,
         featureToggles: featureToggles || {
           messages: true,
           contacts: true,
@@ -79,6 +91,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(201).json({ status: 'success', data: tenant });
     }
 
+    if (req.method === 'PUT') {
+      const { id } = req.query;
+      if (!id || !mongoose.Types.ObjectId.isValid(id as string)) {
+        return sendError(res, 400, 'Invalid tenant ID');
+      }
+
+      const updateData = req.body;
+      const tenant = await Tenant.findOneAndUpdate(
+        { _id: id, isDeleted: false },
+        updateData,
+        { new: true }
+      );
+
+      if (!tenant) {
+        return sendError(res, 404, 'Tenant not found');
+      }
+
+      return res.status(200).json({ status: 'success', data: tenant });
+    }
+    else if (req.method === 'DELETE') {
+      if (!user || user.role !== 'SuperAdmin') {
+        return sendError(res, 403, 'Forbidden: insufficient permissions');
+      }
+
+      const { id } = req.query; // or req.body, depending on your API
+
+      if (!id) {
+        return sendError(res, 400, 'Missing tenant ID');
+      }
+
+      try {
+        const tenant = await Tenant.findByIdAndUpdate(
+          id,
+          { isDeleted: true },
+          { new: true }
+        );
+
+        if (!tenant) {
+          return sendError(res, 404, 'Tenant not found');
+        }
+
+        return res.status(200).json({
+          status: 'success',
+          message: 'Tenant soft deleted',
+          data: tenant,
+        });
+      } catch (error) {
+        console.error('Error deleting tenant:', error);
+        return sendError(res, 500, 'Internal server error');
+      }
+    }
     return sendError(res, 405, 'Method not allowed');
   } catch (error: any) {
     console.error('API Error:', error);

@@ -9,9 +9,12 @@ import { TenantDataTable } from "@/components/admin/tenant/tenant-table";
 
 export const tenantInitialValues: TenantFormType = {
   name: "",
-  logoUrl: null,
-  sinchApiKey: "",
-  sinchApiSecret: "",
+  // logoUrl: null,
+  // sinchApiKey: "",
+  // sinchApiSecret: "",
+  address: "",
+  email: "",
+  phone: "",
   retentionPeriodYears: 1,
   featureToggles: {
     messages: false,
