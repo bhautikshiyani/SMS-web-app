@@ -97,11 +97,11 @@ export default function CompanySettingsPage() {
       setSubmitting(false);
     }
   }
-  if(loading){
-    return(
-      <LoadingComponntScreen />
-    )
-  }
+  // if(loading){
+  //   return(
+  //     <LoadingComponntScreen />
+  //   )
+  // }
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
