@@ -273,7 +273,7 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
                 ) : initialData?._id ? (
                   "Update"
                 ) : (
-                  "Add User"
+                  "Create Group"
                 )}
               </Button>
             </DialogFooter>
