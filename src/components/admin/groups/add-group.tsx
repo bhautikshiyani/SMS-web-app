@@ -63,7 +63,7 @@ const OPTIONS: any[] = [
 ];
 export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProps) {
   const [tenants, setTenants] = useState<{ _id: string; name: string }[]>([]);
-
+  const [user, setUser] = useState<{ _id: string; name: string }[]>([]);
   const form = useForm<GroupAddFormType>({
     resolver: zodResolver(groupAddSchema),
     defaultValues: initialData,
@@ -94,16 +94,42 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
     fetchTenants();
   }, []);
 
+  useEffect(() => {
+    async function fetchUsers() {
+      const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
+      try {
+        const res = await axios.get("/api/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(res.data.data);
+      } catch (err) {
+        console.log("🚀 ~ fetchTenants ~ err:", err)
+      }
+    }
+    fetchUsers();
+  }, []);
+
+
   async function onSubmit(values: z.infer<typeof groupAddSchema>) {
     const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+    const userIds = Array.isArray(values.users)
+      ? values.users.map((user) => (typeof user === 'string' ? user : user.value))
+      : [];
+
+    const payload = {
+      ...values,
+      users: userIds,
+    };
+
     try {
       if (initialData?._id) {
-        await axios.put(`/api/users?id=${initialData._id}`, values, {
+        await axios.put(`/api/group?id=${initialData._id}`, payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("User updated successfully");
       } else {
-        await axios.post("/api/users", values, {
+        await axios.post("/api/group", payload, {
           headers: { Authorization: `Bearer ${token}` },
         });
         toast.success("User created successfully");
@@ -154,15 +180,32 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
               )}
             />
             <FormField
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
               control={form.control}
-              name="assignedUsers"
+              name="users"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Add User</FormLabel>
                   <FormControl>
                     <MultipleSelector
-                      defaultOptions={OPTIONS}
-                      placeholder="Select frameworks you like..."
+                      defaultOptions={user.map((user) => ({
+                        label: user.name,
+                        value: user._id,
+                      }))}
+                      placeholder="Select users..."
                       emptyIndicator={
                         <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
                           no results found.
@@ -177,9 +220,10 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="phone"
+              name="phoneNumber"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Phone</FormLabel>

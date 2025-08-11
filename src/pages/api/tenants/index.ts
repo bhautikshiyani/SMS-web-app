@@ -69,14 +69,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return sendError(res, 400, 'Missing required fields: name');
       }
 
+      if (email) {
+        const existingTenant = await Tenant.findOne({ email: email.trim().toLowerCase() });
+        if (existingTenant) {
+          return res.status(400).json({
+            status: 'error',
+            message: 'A tenant with this email already exists.'
+          });
+        }
+      }
+
       const tenant = new Tenant({
         name,
-        email: email || '',
+        email: email?.trim().toLowerCase() || '',
         phone: phone || '',
         address: address || '',
-        // logoUrl: logoUrl || '',
-        // sinchApiKey,
-        // sinchApiSecret,
         featureToggles: featureToggles || {
           messages: true,
           contacts: true,

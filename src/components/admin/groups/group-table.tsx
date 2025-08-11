@@ -19,187 +19,229 @@ import Cookies from "js-cookie";
 import axios from "axios";
 import { Switch } from "@/components/ui/switch";
 
-interface UserTableProps {
+interface Group {
+  _id: string;
+  name: string;
+  description: string;
+  phoneNumber: string;
+  users: { _id: string; name: string; picture?: string }[];
+  tenant: any;
+  isActive?: boolean;
+  createdAt: string;
+}
+
+interface GroupDataTableProps {
   reloadKey?: number;
   tenantId?: string | null;
-  onEditUser: (user: any) => void;
+  onEditGroup: (group: Group) => void;
 }
-export function GroupDataTable({ reloadKey, tenantId, onEditUser }: UserTableProps) {
-  // const dispatch = useAppDispatch();
+
+export function GroupDataTable({ reloadKey, tenantId, onEditGroup }: GroupDataTableProps) {
   const [loading, setLoading] = React.useState(false);
-  const [userData, setUserData] = React.useState<any>({
-    users: [],
-    totalUsers: 0,
+  const [groupData, setGroupData] = React.useState<{
+    groups: Group[];
+    totalGroups: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }>({
+    groups: [],
+    totalGroups: 0,
     page: 1,
     limit: 10,
     totalPages: 1,
   });
 
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [role, setRole] = React.useState<string>("all");
-  const [pagination, setPagination] = React.useState({
-    pageIndex: (userData.page || 1) - 1,
-    pageSize: userData.limit || 10,
-  });
+  const [switchLoading, setSwitchLoading] = React.useState(false);
 
-  const editUser = (user: any) => {
-    if (!user) return;
-    onEditUser(user);
-  };
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   const fetchData = async (
     pageIndex: number,
     pageSize: number,
-    search?: string,
-    roleFilter?: string
+    search?: string
   ) => {
     setLoading(true);
     try {
       const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
 
       const params = new URLSearchParams();
-      console.log("🚀 ~ fetchData ~ tenantId:", tenantId)
       if (tenantId) params.append("tenantId", tenantId);
       params.append("page", (pageIndex + 1).toString());
       params.append("limit", pageSize.toString());
 
       if (search) params.append("search", search);
-      if (roleFilter && roleFilter !== "all") params.append("role", roleFilter);
 
-      const response = await axios.get(`/api/users?${params.toString()}`, {
+      const response = await axios.get(`/api/group?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const { pagination } = response.data;
+      const { data, pagination } = response.data;
 
-      setUserData({
-        users:[] ,
-        totalUsers: pagination.total,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
+      setGroupData({
+        groups: data,
+        totalGroups: pagination.total,
+        page: pagination.page,
+        limit: pagination.limit,
+        totalPages: pagination.totalPages,
       });
 
       setPagination({
         pageIndex: pagination.page - 1,
         pageSize: pagination.limit,
       });
-    } catch (error: any) {
-      console.error("Failed to fetch user data:", error);
-      toast.error("Failed to load user data");
+    } catch (error) {
+      console.error("Failed to fetch group data:", error);
+      toast.error("Failed to load groups");
     } finally {
       setLoading(false);
     }
   };
 
   React.useEffect(() => {
-    fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
+    fetchData(pagination.pageIndex, pagination.pageSize, searchQuery);
   }, [reloadKey, tenantId, pagination.pageIndex, pagination.pageSize]);
-  const deleteUser = async (userId: string) => {
-    if (!userId) return;
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    fetchData(0, pagination.pageSize, query);
+  };
+
+  const handlePaginationChange = (pageIndex: number, pageSize: number) => {
+    setPagination({ pageIndex, pageSize });
+    fetchData(pageIndex, pageSize, searchQuery);
+  };
+
+  const editGroup = (group: Group) => {
+    if (!groupData) return;
+    onEditGroup(group);
+  };
+
+  const deleteGroup = async (groupId: string) => {
+    if (!groupId) return;
 
     const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
     try {
       await toast.promise(
-        axios.delete(`/api/users?id=${userId}`, {
+        axios.delete(`/api/group?id=${groupId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }),
         {
-          loading: "Deleting user...",
-          success: "User deleted successfully",
-          error: "Failed to delete user",
+          loading: "Deleting group...",
+          success: "Group deleted successfully",
+          error: "Failed to delete group",
         }
       );
-
-      fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
+      fetchData(pagination.pageIndex, pagination.pageSize, searchQuery);
     } catch (err) {
       console.error("Delete error:", err);
-      toast.error("Something went wrong while deleting user");
+      toast.error("Something went wrong while deleting group");
+    }
+  };
+  const handleToggle = async (user: any) => {
+    setSwitchLoading(true);
+    const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
+    try {
+      await axios.put(`/api/group?id=${user._id}`, {
+        isActive: !user.isActive,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast.success(`User ${!user.isActive ? "activated" : "deactivated"} successfully`);
+      fetchData(pagination.pageIndex, pagination.pageSize, searchQuery);
+    } catch (error) {
+      toast.error("Failed to update user status");
+    } finally {
+      setSwitchLoading(false);
     }
   };
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    fetchData(0, pagination.pageSize, query, role);
-  };
 
-  const handleRoleChange = (newRole: string) => {
-    setRole(newRole);
-    fetchData(0, pagination.pageSize, searchQuery, newRole);
-  };
-
-  const handlePaginationChange = (pageIndex: number, pageSize: number) => {
-    setPagination({ pageIndex, pageSize });
-    fetchData(pageIndex, pageSize, searchQuery, role);
-  };
-
-  React.useEffect(() => {
-    fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
-  }, []);
-
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<Group>[] = [
     {
-      accessorKey: "fullName",
-      header: "User",
-      cell: ({ row }) => {
-        const user = row.original;
-        if (!user) return null;
-
-        return (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+      accessorKey: "name",
+      header: "Group Name",
+      cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      cell: ({ row }) => <div>{row.original.description || "-"}</div>,
+    },
+    {
+      accessorKey: "phoneNumber",
+      header: "Phone Number",
+      cell: ({ row }) => <div>{row.original.phoneNumber || "-"}</div>,
+    },
+    {
+      accessorKey: "users",
+      header: "Users",
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.users?.map((user) => (
+            <div
+              key={user._id}
+              className="flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-xs"
+              title={user.name}
+            >
               {user.picture ? (
                 <Image
                   src={getImageSrc(user.picture)}
-                  alt="admin test"
-                  width={100}
-                  height={100}
-                  className="h-8 w-8 rounded-full object-cover"
+                  alt={user.name}
+                  width={20}
+                  height={20}
+                  className="rounded-full"
                 />
               ) : (
-                <UserCircleIcon className="h-6 w-6 text-muted-foreground" />
+                <UserCircleIcon className="h-5 w-5 text-gray-400" />
               )}
+              <span>{user.name}</span>
             </div>
-            <div className="flex flex-col">
-              <span className="font-medium">{user.name}</span>
-            </div>
-          </div>
+          )) || "-"}
+        </div>
+      ),
+    },
+
+    {
+      accessorKey: "tenant",
+      header: "Tenant",
+      cell: ({ row }) => <div>{row.original.tenant?.name || "-"}</div>,
+    },
+    {
+      accessorKey: "phoneNumber",
+      header: "Phone Number",
+      cell: ({ row }) => <div>{row.original.phoneNumber || "-"}</div>,
+    },
+    {
+      accessorKey: "isActive",
+      header: "Status",
+      cell: ({ row }) => {
+        const groupData = row.original;
+        return (
+          <Switch
+            checked={row.original?.isActive || false}
+            disabled={switchLoading}
+            onCheckedChange={() => handleToggle(groupData)}
+          />
         );
       },
-      enableHiding: false,
     },
-
-    {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ row }) => <div>{row.original?.email || "N/A"}</div>,
-    },
-    {
-      accessorKey: "Tenant",
-      header: "Tenant",
-      cell: ({ row }) => <div>{row?.original?.tenant?.name || "N/A"}</div>,
-    },
-    {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => <div>{row.original?.role || "N/A"}</div>,
-    },
-
-    // {
-    //   accessorKey: "lastLogin",
-    //   header: "Last Login",
-    //   cell: ({ row }) => <div>{formatDate(row.original.lastLogin)}</div>,
-    // },
     {
       accessorKey: "createdAt",
-      header: "Created at",
+      header: "Created At",
       cell: ({ row }) => <div>{formatDate(row.original.createdAt)}</div>,
     },
-    // Actions column
     {
       id: "actions",
       header: "Actions",
@@ -216,15 +258,15 @@ export function GroupDataTable({ reloadKey, tenantId, onEditUser }: UserTablePro
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => editUser(row.original)}>
-              Edit User
+            <DropdownMenuItem onClick={() => editGroup(row.original)}>
+              Edit Group
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600"
-              onClick={() => row.original?._id && deleteUser(row.original._id)}
+              onClick={() => deleteGroup(row.original._id)}
             >
-              Delete User
+              Delete Group
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -232,37 +274,25 @@ export function GroupDataTable({ reloadKey, tenantId, onEditUser }: UserTablePro
     },
   ];
 
-  const status = {
-    name: "Status",
-    options: [
-      { label: "Active", value: "active" },
-      { label: "Disable", value: "disabled" },
-    ],
-    value: role,
-    onChange: handleRoleChange,
-  };
-
+  
   return (
-    <>
-      <DataTable
-        columns={columns}
-        data={userData.users || []}
-        loading={loading}
-        pageCount={userData.totalPages || 1}
-        pageIndex={pagination.pageIndex}
-        pageSize={pagination.pageSize}
-        totalItems={userData.totalUsers || 0}
-        searchPlaceholder="Search user..."
-        onSearch={handleSearch}
-        filterOptions={status}
-        enableSelection={false}
-        enableColumnVisibility={true}
-        enablePagination={true}
-        onPaginationChange={handlePaginationChange}
-        getRowId={(row) => row._id || String(Math.random())}
-        emptyMessage="No users found."
-        loadingMessage="Loading groups..."
-      />
-    </>
+    <DataTable
+      columns={columns}
+      data={groupData.groups}
+      loading={loading}
+      pageCount={groupData.totalPages}
+      pageIndex={pagination.pageIndex}
+      pageSize={pagination.pageSize}
+      totalItems={groupData.totalGroups}
+      searchPlaceholder="Search groups..."
+      onSearch={handleSearch}
+      enableSelection={false}
+      enableColumnVisibility={true}
+      enablePagination={true}
+      onPaginationChange={handlePaginationChange}
+      getRowId={(row) => row._id}
+      emptyMessage="No groups found."
+      loadingMessage="Loading groups..."
+    />
   );
 }

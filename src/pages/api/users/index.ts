@@ -27,15 +27,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const limitNumber = parseInt(limit as string);
       const skip = (pageNumber - 1) * limitNumber;
 
-      const filter: any = { isDeleted: false,tenantId:tenantId };
+      const filter: any = { isDeleted: false };
 
-      // if (tenantId) {
-      //   filter.tenantId = tenantId;
-      // }
+      if (currentUser.role === 'SuperAdmin') {
+        if (tenantId) {
+          filter.tenantId = tenantId;
+        }
+      } else {
+        if (!currentUser.tenantId) {
+          return res.status(400).json({ status: 'error', message: 'tenantId is required for this user' });
+        }
+        filter.tenantId = currentUser.tenantId;
+      }
 
       if (search) {
         const searchRegex = new RegExp(search as string, 'i');
-        filter.$or = [
+        filter.$or = [    
           { name: searchRegex },
           { email: searchRegex },
           { role: searchRegex }
@@ -84,7 +91,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     const currentUser = verifyJwt(token);
     if (!currentUser || (currentUser.role !== 'SuperAdmin' && currentUser.role !== 'Admin')) {
-      return res.status(403).json({ status: 'error', message: 'Forbidden: insufficient permissions' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Forbidden: insufficient permissions',
+      });
     }
 
     const { name, email, role = 'OrgUser', tenantId } = req.body;
@@ -97,11 +107,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const existing = await User.findOne({ email, isDeleted: false });
+      const existing = await User.findOne({
+        email: email.trim().toLowerCase(),
+        tenantId,
+        isDeleted: false,
+      });
+
       if (existing) {
         return res.status(409).json({
           status: 'error',
-          message: 'User with this email already exists',
+          message: `User with this email already exists in tenant ${tenantId}`,
         });
       }
 
@@ -112,7 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const newUser = new User({
         name,
-        email,
+        email: email.trim().toLowerCase(),
         password: hashedPassword,
         role,
         tenantId,
@@ -120,7 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         tempPasswordExpiresAt,
         isDeleted: false,
         lastLogin: null,
-        isActive: true,      
+        isActive: true,
       });
 
       const transporter = nodemailer.createTransport({
@@ -135,16 +150,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         to: email,
         subject: 'Your Account Has Been Created',
         html: `
-          <p>Hello ${name},</p>
-          <p>Your account has been created.</p>
-          <ul>
-            <li><strong>Email:</strong> ${email}</li>
-            <li><strong>Temporary Password:</strong> ${tempPassword}</li>
-            <li><strong>Note:</strong> This password will expire in 24 hours.</li>
-          </ul>
-          <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/auth/login">Click here to login</a> and change your password.</p>
-          <p>Thanks,<br/>Team</p>
-        `,
+        <p>Hello ${name},</p>
+        <p>Your account has been created.</p>
+        <ul>
+          <li><strong>Email:</strong> ${email}</li>
+          <li><strong>Temporary Password:</strong> ${tempPassword}</li>
+          <li><strong>Note:</strong> This password will expire in 24 hours.</li>
+        </ul>
+        <p><a href="${process.env.NEXT_PUBLIC_BASE_URL}/auth/login">Click here to login</a> and change your password.</p>
+        <p>Thanks,<br/>Team</p>
+      `,
       });
 
       await newUser.save();
@@ -155,7 +170,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     } catch (err: any) {
       console.error('Error creating user:', err);
-      return res.status(500).json({ status: 'error', message: err.message || 'Internal Server Error' });
+      return res.status(500).json({
+        status: 'error',
+        message: err.message || 'Internal Server Error',
+      });
     }
   }
 
@@ -184,7 +202,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-    
+
       if (updateData.role) {
         if (currentUser?.role !== 'SuperAdmin') {
           return res.status(403).json({

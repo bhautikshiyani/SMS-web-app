@@ -93,13 +93,16 @@ export const groupAddSchema = z.object({
     .string()
     .min(1, { message: "Name is required" })
     .max(50, { message: "Name cannot exceed 50 characters" }),
+  description: z
+    .string()
+    .max(200, { message: "Description cannot exceed 200 characters" })
+    .optional()
+    .or(z.literal("")), 
   tenantId: z.string().min(1, "Tenant is required"),
-  assignedUsers: z.array(optionSchema).min(1),
-
-  phone: z
+  users: z.array(optionSchema).min(1),
+  phoneNumber: z
     .string()
     .refine(isValidPhoneNumber, { message: "Invalid phone number" }),
-
   picture: z
     .union([
       z.null(),
@@ -140,20 +143,18 @@ export const groupAddSchema = z.object({
         }
       };
 
-      // If it's an object with appropriate properties, validate it as a File
       if (typeof val === "object" && val !== null && !Array.isArray(val)) {
         validateFile(val);
       }
 
-      // If it's an array, validate the first item
       if (Array.isArray(val) && val.length > 0) {
         validateFile(val[0]);
       }
     }),
 });
+
 export const tenantSchema = z.object({
   name: z.string().min(1, "Tenant name is required"),
-  
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z
     .string()
@@ -165,9 +166,11 @@ export const tenantSchema = z.object({
     voicemail: z.boolean(),
     phone: z.boolean(),
   }),
-  address:  z.string().min(1, "Tenant address is required"),
+  address: z.string().min(1, "Tenant address is required"),
 });
+
 export type TenantFormType = z.infer<typeof tenantSchema>;
 export type UserAddFormType = z.infer<typeof userAddSchema>;
-export type GroupAddFormType = z.infer<typeof groupAddSchema>;
-
+export type GroupAddFormType = z.infer<typeof groupAddSchema> & {
+  _id?: string;
+};
