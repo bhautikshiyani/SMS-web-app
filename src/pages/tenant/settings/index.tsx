@@ -14,6 +14,7 @@ import Cookies from "js-cookie";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Loading from "@/components/common/Loading";
+import  { LoadingComponntScreen } from "@/components/common/LoadingScreen";
 
 
 
@@ -96,7 +97,11 @@ export default function CompanySettingsPage() {
       setSubmitting(false);
     }
   }
-
+  if(loading){
+    return(
+      <LoadingComponntScreen />
+    )
+  }
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>

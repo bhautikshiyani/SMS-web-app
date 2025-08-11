@@ -192,7 +192,7 @@ export function GroupDataTable({ reloadKey, tenantId, onEditGroup }: GroupDataTa
           {row.original.users?.map((user) => (
             <div
               key={user._id}
-              className="flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-xs"
+              className="flex items-center gap-1 rounded bg-gray-100 dark:bg-neutral-800  px-2 py-1 text-xs"
               title={user.name}
             >
               {user.picture ? (
@@ -204,7 +204,7 @@ export function GroupDataTable({ reloadKey, tenantId, onEditGroup }: GroupDataTa
                   className="rounded-full"
                 />
               ) : (
-                <UserCircleIcon className="h-5 w-5 text-gray-400" />
+                <UserCircleIcon className="h-5 w-5" />
               )}
               <span>{user.name}</span>
             </div>

@@ -28,7 +28,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.method === 'GET') {
             const { page = 1, limit = 10, search = '', tenantId } = req.query;
 
-            let filter: any = { isDeleted: false };
+            const filter: any = { isDeleted: false };
+
 
             if (currentUser.role === 'SuperAdmin') {
                 if (tenantId) {

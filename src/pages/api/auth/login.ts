@@ -22,14 +22,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const user = await User.findOne({
       email: email.trim().toLowerCase(),
-      isDeleted: false
-    });
+      isDeleted: false,
 
+    });
     console.log('User found:', user);
 
     if (!user) {
       return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
     }
+    if (!user.isActive) {
+      return res.status(403).json({ status: 'error', message: 'Your account is disabled. Please contact admin.' });
+    }
+
 
     if (user.role !== 'SuperAdmin' && !tenantId) {
       return res.status(400).json({

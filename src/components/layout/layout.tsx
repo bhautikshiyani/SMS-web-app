@@ -22,7 +22,7 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
 }
 
 function MainLayout({ children }: { children: React.ReactNode }) {
- const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
