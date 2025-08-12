@@ -27,6 +27,7 @@ export const loginUser = createAsyncThunk(
   async (credentials: { email: string; password: string }, thunkAPI) => {
     try {
       const res = await axios.post('/api/auth/login', credentials)
+      console.log('Login response:', res)
       return res.data
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error?.response?.data?.message || 'Login failed')
@@ -95,7 +96,6 @@ const authSlice = createSlice({
         state.loading = false
         state.user = action.payload.user
         state.token = action.payload.token
-        localStorage.setItem('token', action.payload.token)
       })
       .addCase(loginUser.rejected, (state, action: PayloadAction<any>) => {
         state.loading = false

@@ -45,6 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         filter.$or = [    
           { name: searchRegex },
           { email: searchRegex },
+          { phoneNumber: searchRegex }, 
           { role: searchRegex }
         ];
       }
@@ -97,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const { name, email, role = 'OrgUser', tenantId } = req.body;
+    const { name, email, phoneNumber, role = 'OrgUser', tenantId } = req.body;
 
     if (!name || !email || !tenantId) {
       return res.status(400).json({
@@ -107,17 +108,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const existing = await User.findOne({
+      const existingEmail = await User.findOne({
         email: email.trim().toLowerCase(),
         tenantId,
         isDeleted: false,
       });
 
-      if (existing) {
+      if (existingEmail) {
         return res.status(409).json({
           status: 'error',
           message: `User with this email already exists in tenant ${tenantId}`,
         });
+      }
+
+      if (phoneNumber) {
+        const existingPhone = await User.findOne({
+          phoneNumber,
+          tenantId,
+          isDeleted: false,
+        });
+
+        if (existingPhone) {
+          return res.status(409).json({
+            status: 'error',
+            message: `User with this phone number already exists in tenant ${tenantId}`,
+          });
+        }
       }
 
       const tempPassword = generateTempPassword();
@@ -128,6 +144,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const newUser = new User({
         name,
         email: email.trim().toLowerCase(),
+        phoneNumber: phoneNumber || '',
         password: hashedPassword,
         role,
         tenantId,
@@ -166,6 +183,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(201).json({
         status: 'success',
+        data: {
+          _id: newUser._id,
+          name: newUser.name,
+          email: newUser.email,
+          phoneNumber: newUser.phoneNumber,
+          role: newUser.role,
+          tenantId: newUser.tenantId,
+          isActive: newUser.isActive
+        },
         message: 'User created and credentials emailed',
       });
     } catch (err: any) {
@@ -202,6 +228,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      if (updateData.phoneNumber && updateData.phoneNumber !== userToUpdate.phoneNumber) {
+        const existingPhone = await User.findOne({
+          phoneNumber: updateData.phoneNumber,
+          tenantId: userToUpdate.tenantId,
+          isDeleted: false,
+          _id: { $ne: id }
+        });
+
+        if (existingPhone) {
+          return res.status(409).json({
+            status: 'error',
+            message: 'Another user with this phone number already exists in this tenant',
+          });
+        }
+      }
 
       if (updateData.role) {
         if (currentUser?.role !== 'SuperAdmin') {
@@ -228,7 +269,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
-
       if (typeof updateData.isActive === 'boolean') {
         if (currentUserId !== targetUserId && currentUser?.role !== 'SuperAdmin') {
           return res.status(403).json({
@@ -242,7 +282,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ...updateData,
         updatedAt: new Date()
       };
-      console.log("🚀 ~ handler ~ updateObject:", updateObject)
 
       const updatedUser = await User.findByIdAndUpdate(
         id,
@@ -287,7 +326,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(403).json({ status: 'error', message: 'Forbidden: insufficient permissions' });
       }
 
-      await User.findByIdAndUpdate(id, { isDeleted: true });
+      await User.findByIdAndUpdate(id, { 
+        isDeleted: true,
+        phoneNumber: '' 
+      });
 
       return res.status(200).json({
         status: 'success',

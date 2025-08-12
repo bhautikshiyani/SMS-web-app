@@ -17,14 +17,15 @@ import Loading from '@/components/common/Loading'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import AuthLayout from '@/components/layout/auth-layout'
 import Cookies from 'js-cookie'
+import { useAppDispatch, useAppSelector } from '@/hooks/useAppDispatch'
 // import { useAppDispatch, useAppSelector } from '@/store/hooks'
 
 const formSchema = loginFormSchema
 
 export default function LoginPreview() {
     const router = useRouter()
-    // const dispatch = useAppDispatch()
-    // const { loading } = useAppSelector((state) => state.auth)
+    const dispatch = useAppDispatch()
+    const { loading } = useAppSelector((state) => state.auth)
 
     const [isLoading, setIsLoading] = useState(false)
     const form = useForm<z.infer<typeof formSchema>>({

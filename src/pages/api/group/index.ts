@@ -184,7 +184,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const { id } = req.query;
             if (!id || !mongoose.Types.ObjectId.isValid(id as string)) {
                 return sendError(res, 400, 'Invalid group ID');
-            }
+            }   
 
             const group = await Group.findOne({ _id: id, isDeleted: false });
             if (!group) {

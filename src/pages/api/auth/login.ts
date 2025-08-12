@@ -25,7 +25,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       isDeleted: false,
 
     });
-    console.log('User found:', user);
 
     if (!user) {
       return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
@@ -62,10 +61,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     user.lastLogin = new Date();
     await user.save();
 
-    // ✅ Token payload includes tenantId only if not SuperAdmin
     const tokenPayload: any = {
       userId: user._id,
-      role: user.role
+      role: user.role,
+      name:user.name,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
     };
     if (user.role !== 'SuperAdmin') {
       tokenPayload.tenantId = user.tenantId;

@@ -5,6 +5,7 @@ interface IUser extends Document {
   email: string;
   password: string;
   role: string;
+  phoneNumber?: string;
   tenantId: string | null;
   isFirstLogin: boolean;
   tempPasswordExpiresAt?: Date;
@@ -18,8 +19,9 @@ interface IUser extends Document {
 const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
-    email: { type: String, required: true }, 
+    email: { type: String, required: true },
     password: { type: String, required: true },
+    phoneNumber: { type: String, default: '' },
     role: { type: String, default: 'OrgUser' },
     tenantId: { type: String, required: function () { return this.role !== 'SuperAdmin'; }, default: null },
     isFirstLogin: { type: Boolean, default: true },
@@ -34,5 +36,6 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.index({ email: 1, tenantId: 1 }, { unique: true });
+userSchema.index({ phoneNumber: 1, tenantId: 1 }, { unique: true, sparse: true });
 
 export default mongoose.models.User || model<IUser>('User', userSchema);
