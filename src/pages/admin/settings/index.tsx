@@ -42,6 +42,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import MultipleSelector from "@/components/ui/multiple-selector";
 const apiConfigSchema = z.object({
   apiKey: z.string().min(1, "API Key is required"),
   apiSecret: z.string().min(1, "API Secret is required"),
@@ -82,6 +83,8 @@ export const tenantInitialValues: SettingsFormValues = {
 export const SettingsPage = () => {
   const [tenants, setTenants] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -112,6 +115,8 @@ export const SettingsPage = () => {
       assignedToId: "",
     },
   });
+  const selectedTenantId = phoneAssignmentForm.watch("tenantId");
+  const selectedAssignedToType = phoneAssignmentForm.watch("assignedToType");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -158,6 +163,44 @@ export const SettingsPage = () => {
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchUsersOrGroups = async () => {
+      if (!selectedTenantId) return;
+
+      const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
+      try {
+        setIsLoading(true);
+        phoneAssignmentForm.setValue("assignedToId", "");
+
+        if (selectedAssignedToType === "user") {
+          const usersRes = await fetch(`/api/users?tenantId=${selectedTenantId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const usersData = await usersRes.json();
+          if (usersData.status === "success") {
+            setUsers(usersData.data);
+          }
+        } else {
+          const groupsRes = await fetch(`/api/group?tenantId=${selectedTenantId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const groupsData = await groupsRes.json();
+          if (groupsData.status === "success") {
+            setGroups(groupsData.data);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch users/groups:", error);
+        toast.error("Failed to load users/groups");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsersOrGroups();
+  }, [selectedTenantId, selectedAssignedToType]);
 
   async function onSubmit(values: SettingsFormValues) {
     try {
@@ -489,7 +532,7 @@ export const SettingsPage = () => {
                             </FormItem>
                           )}
                         />
-                        <FormField
+                        {/* <FormField
                           control={phoneAssignmentForm.control}
                           name="assignedToId"
                           render={({ field }) => (
@@ -501,35 +544,45 @@ export const SettingsPage = () => {
                               <FormMessage />
                             </FormItem>
                           )}
-                        />
+                        /> */}
 
-                                    {/* <FormField
-                                      control={form.control}
-                                      name="users"
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Add User</FormLabel>
-                                          <FormControl>
-                                            <MultipleSelector
-                                              defaultOptions={user.map((user) => ({
-                                                label: user.name,
-                                                value: user._id,
-                                              }))}
-                                              placeholder="Select users..."
-                                              emptyIndicator={
-                                                <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-                                                  no results found.
-                                                </p>
-                                              }
-                                              value={Array.isArray(field.value) ? field.value : []}
-                                              onChange={field.onChange}
-                                              ref={field.ref}
-                                            />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    /> */}
+                        <FormField
+                          control={phoneAssignmentForm.control}
+                          name="assignedToId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>                                {selectedAssignedToType === "user" ? "User" : "Group"}
+                              </FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                                disabled={isLoading || !selectedTenantId}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={`Select ${selectedAssignedToType}`} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {selectedAssignedToType === "user" ? (
+                                    users.map((user) => (
+                                      <SelectItem key={user._id} value={user._id}>
+                                        {user.name}
+                                      </SelectItem>
+                                    ))
+                                  ) : (
+                                    groups.map((group) => (
+                                      <SelectItem key={group._id} value={group._id}>
+                                        {group.name}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
                       <div className="flex justify-end">
                         <Button type="submit" disabled={isLoading}>

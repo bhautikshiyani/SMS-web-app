@@ -1,19 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { dbConnect } from '@/lib/db';
 import { verifyJwt } from '@/lib/auth';
-import User from '@/models/User';
+import Group from '@/models/Group';
 import Tenant from '@/models/Tenant';
 
-interface UserDoc {
+interface GroupDoc {
   _id: string;
   name: string;
-  email: string;
-  phoneNumber?: string;
-  role: string;
-  tenantId?: {
+  description?: string;
+  tenantId: {
     _id: string;
     name?: string;
-  } | null;
+  };
   isDeleted?: boolean;
 }
 
@@ -21,13 +19,12 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<{ 
     status: string; 
-    data?: UserDoc | UserDoc[]; 
+    data?: GroupDoc | GroupDoc[]; 
     message?: string 
   }>
 ) {
   await dbConnect();
 
-  // Authentication
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
     return res.status(401).json({ status: 'error', message: 'No token provided' });
@@ -38,42 +35,37 @@ export default async function handler(
     return res.status(401).json({ status: 'error', message: 'Invalid token' });
   }
 
-  // Handle GET request
   if (req.method === 'GET') {
     try {
       const { id, tenantId } = req.query;
 
-      // Case 1: Fetch single user by ID
       if (id && typeof id === 'string') {
-        // Authorization - Only SuperAdmin or same tenant Admin
         if (currentUser.role !== 'SuperAdmin') {
-          const requestedUser = await User.findById(id).select('tenantId');
-          if (!requestedUser || requestedUser.tenantId?.toString() !== currentUser.tenantId) {
+          const requestedGroup = await Group.findById(id).select('tenantId');
+          if (!requestedGroup || requestedGroup.tenantId?.toString() !== currentUser.tenantId) {
             return res.status(403).json({ 
               status: 'error', 
-              message: 'Forbidden: cannot access this user' 
+              message: 'Forbidden: cannot access this group' 
             });
           }
         }
 
-        const user = await User.findById(id)
-          .select('-password -__v')
+        const group = await Group.findById(id)
+          .select('-__v')
           .populate({
             path: 'tenantId',
             model: Tenant,
             select: 'name'
           })
-          .lean<UserDoc>();
+          .lean<GroupDoc>();
 
-        if (!user || user.isDeleted) {
-          return res.status(404).json({ status: 'error', message: 'User not found' });
+        if (!group || group.isDeleted) {
+          return res.status(404).json({ status: 'error', message: 'Group not found' });
         }
 
-        return res.status(200).json({ status: 'success', data: user });
+        return res.status(200).json({ status: 'success', data: group });
 
-      // Case 2: Fetch users by tenant
       } else if (tenantId && typeof tenantId === 'string') {
-        // Authorization - Only SuperAdmin or same tenant Admin
         if (currentUser.role !== 'SuperAdmin' && currentUser.tenantId !== tenantId) {
           return res.status(403).json({ 
             status: 'error', 
@@ -81,19 +73,19 @@ export default async function handler(
           });
         }
 
-        const users = await User.find({ 
+        const groups = await Group.find({ 
           tenantId,
           isDeleted: { $ne: true } 
         })
-          .select('-password -__v')
+          .select('-__v')
           .populate({
             path: 'tenantId',
             model: Tenant,
             select: 'name'
           })
-          .lean<UserDoc[]>();
+          .lean<GroupDoc[]>();
 
-        return res.status(200).json({ status: 'success', data: users });
+        return res.status(200).json({ status: 'success', data: groups });
 
       } else {
         return res.status(400).json({ 
@@ -103,7 +95,7 @@ export default async function handler(
       }
 
     } catch (err) {
-      console.error('Error fetching users:', err);
+      console.error('Error fetching groups:', err);
       return res.status(500).json({ 
         status: 'error', 
         message: 'Internal Server Error' 
