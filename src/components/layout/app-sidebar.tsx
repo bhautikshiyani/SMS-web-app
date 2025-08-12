@@ -91,7 +91,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     className="cursor-pointer"
-                    onClick={() => router.push('/tenant')}
+                    onClick={() => router.push('/admin/tenant')}
                     tooltip={"Back to Home"}
                   >
                     <ArrowLeft />

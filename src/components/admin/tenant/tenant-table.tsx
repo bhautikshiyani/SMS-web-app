@@ -259,7 +259,7 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       // ✅ Add this to handle row click
       onRowClick={(row) => {
         const id = row._id;
-        if (id) router.push(`/tenant/users?tenantId=${id}`);
+        if (id) router.push(`/admin/tenant/users?tenantId=${id}`);
       }}
     />
   );

@@ -1,40 +1,51 @@
-import {  BadgeQuestionMark, Building2, Contact, LayoutDashboard,  Mail, MessageCircle, Phone, Settings, User2, Users, Voicemail } from 'lucide-react';
-import { type SidebarData } from '../types';
-
+import {
+  BadgeQuestionMark,
+  Building2,
+  Contact,
+  LayoutDashboard,
+  Mail,
+  MessageCircle,
+  Phone,
+  Settings,
+  User2,
+  Users,
+  Voicemail,
+} from "lucide-react";
+import { type SidebarData } from "../types";
 
 export const sidebarData: SidebarData = {
   navGroups: [
     {
-      title: 'General',
+      title: "General",
       items: [
         {
-          title: 'Dashboard',
-          url: '/dashboard',
+          title: "Dashboard",
+          url: "/admin/dashboard",
           icon: LayoutDashboard,
         },
         {
-          title: 'Tenant',
-          url: '/tenant',
+          title: "Tenant",
+          url: "/admin/tenant",
           icon: Building2,
         },
         {
-          title: 'Messages',
-          url: '/messages',
+          title: "Messages",
+          url: "/messages",
           icon: MessageCircle,
         },
         {
-          title: 'Contacts',
-          url: '/contacts',
+          title: "Contacts",
+          url: "/contacts",
           icon: Contact,
         },
         {
-          title: 'Voicemail',
-          url: '/voicemail',
+          title: "Voicemail",
+          url: "/voicemail",
           icon: Voicemail,
         },
         {
-          title: 'Phone',
-          url: '/phone',
+          title: "Phone",
+          url: "/phone",
           icon: Phone,
         },
       ],
@@ -42,55 +53,57 @@ export const sidebarData: SidebarData = {
   ],
   tenantGroups: [
     {
-      title: 'General',
+      title: "General",
       items: [
-        
         {
-          title: 'User',
-          url: '/tenant/users',
+          title: "User",
+          url: "/admin/tenant/users",
           icon: User2,
         },
         {
-          title: 'Groups',
-          url: '/tenant/groups',
+          title: "Groups",
+          url: "/admin/tenant/groups",
           icon: Users,
         },
         {
-          title: 'Settings',
-          url: '/tenant/settings',
+          title: "Settings",
+          url: "/admin/tenant/settings",
           icon: Settings,
         },
-
       ],
     },
   ],
-  footer: [
 
+  footer: [
     {
-      title: 'Support Center',
+      title: "Support Center",
       icon: BadgeQuestionMark,
       items: [
         {
-          title: 'Phone Support',
-          url: '',
+          title: "Phone Support",
+          url: "",
           icon: Phone,
         },
         {
-          title: 'Email Support',
-          url: '',
+          title: "Email Support",
+          url: "",
           icon: Mail,
         },
       ],
     },
     {
-      title: 'Setting',
+      title: "Setting",
       items: [
         {
-          title: 'Settings',
-          url: '/settings',
+          title: "Settings",
+          url: "/settings",
           icon: Settings,
         },
-
+        {
+          title: "General Settings",
+          url: "/admin/settings",
+          icon: Settings,
+        },
       ],
     },
   ],

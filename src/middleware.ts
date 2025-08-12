@@ -128,7 +128,7 @@ import { parseJwt } from '@/lib/auth';
 
 // Role-based homepage mapping
 const roleHomeMap: Record<UserRole, string> = {
-  SuperAdmin: '/dashboard',
+  SuperAdmin: '/admin/dashboard',
   Admin: '/messages',
   OrgManager: '/messages',
   OrgUser: '/messages',
