@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     await dbConnect();
-
+    console.log('Decoded JWT:', decoded);
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
 

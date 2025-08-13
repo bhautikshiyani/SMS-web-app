@@ -70,9 +70,13 @@ export function AddUser({ open, setOpen, initialData, onSuccess }: AddUserProps)
   }, [initialData, reset]);
 
   useEffect(() => {
+    const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
     async function fetchTenants() {
       try {
-        const res = await axios.get("/api/tenants");
+        const res = await axios.get("/api/tenants", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setTenants(res.data.data);
       } catch (err) {
         toast.error("Unable to load tenants");

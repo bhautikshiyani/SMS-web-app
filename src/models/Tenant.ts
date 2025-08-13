@@ -1,4 +1,4 @@
-import { Schema, model, models } from 'mongoose';
+import { Schema, model, models, Types } from 'mongoose';
 
 export interface ITenant {
   name: string;
@@ -13,6 +13,7 @@ export interface ITenant {
   };
   retentionPeriodYears: number;
   isDeleted: boolean;
+  createdBy?: Types.ObjectId; 
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -31,6 +32,7 @@ const TenantSchema = new Schema<ITenant>(
     },
     retentionPeriodYears: { type: Number, default: 7 },
     isDeleted: { type: Boolean, default: false },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User' }, 
   },
   { timestamps: true }
 );

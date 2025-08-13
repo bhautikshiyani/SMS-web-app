@@ -29,23 +29,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const filter: any = { isDeleted: false };
 
-      if (currentUser.role === 'SuperAdmin') {
-        if (tenantId) {
-          filter.tenantId = tenantId;
+      if (tenantId && typeof tenantId === 'string') {
+        const tenant = await Tenant.findById(tenantId).select('-__v -createdAt -updatedAt').lean();
+        if (!tenant) {
+          return res.status(404).json({ status: 'error', message: 'Tenant not found' });
         }
+
+        if (currentUser.role !== 'SuperAdmin' && currentUser.tenantId !== tenantId) {
+          return res.status(403).json({ status: 'error', message: 'Forbidden: cannot access this tenant' });
+        }
+
+        filter.tenantId = tenantId;
       } else {
-        if (!currentUser.tenantId) {
-          return res.status(400).json({ status: 'error', message: 'tenantId is required for this user' });
+        if (currentUser.role !== 'SuperAdmin') {
+          if (!currentUser.tenantId) {
+            return res.status(400).json({ status: 'error', message: 'tenantId is required for this user' });
+          }
+          filter.tenantId = currentUser.tenantId;
         }
-        filter.tenantId = currentUser.tenantId;
+      }
+      if (currentUser.role === 'SuperAdmin') {
+        filter.createdBy = currentUser.userId;
       }
 
       if (search) {
         const searchRegex = new RegExp(search as string, 'i');
-        filter.$or = [    
+        filter.$or = [
           { name: searchRegex },
           { email: searchRegex },
-          { phoneNumber: searchRegex }, 
+          { phoneNumber: searchRegex },
           { role: searchRegex }
         ];
       }
@@ -83,6 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           totalPages: Math.ceil(total / limitNumber)
         }
       });
+
     } catch (err: any) {
       console.error('Error fetching users:', err);
       return res.status(500).json({ status: 'error', message: err.message || 'Internal Server Error' });
@@ -91,6 +104,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const currentUser = verifyJwt(token);
+    console.log('Current User:', currentUser);
+
     if (!currentUser || (currentUser.role !== 'SuperAdmin' && currentUser.role !== 'Admin')) {
       return res.status(403).json({
         status: 'error',
@@ -108,6 +123,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
+      const tenant = await Tenant.findOne({ _id: tenantId, createdBy: currentUser.userId });
+      if (!tenant) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Tenant not found or you do not have permission to create users in this tenant.',
+        });
+      }
+
       const existingEmail = await User.findOne({
         email: email.trim().toLowerCase(),
         tenantId,
@@ -148,6 +171,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         password: hashedPassword,
         role,
         tenantId,
+        createdBy: currentUser.userId,
         isFirstLogin: true,
         tempPasswordExpiresAt,
         isDeleted: false,
@@ -228,6 +252,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      if (updateData.password) {
+        if (updateData.password.length < 6) {
+          return res.status(400).json({
+            status: 'error',
+            message: 'Password must be at least 6 characters'
+          });
+        }
+
+        if (currentUser?.role !== 'SuperAdmin') {
+          if (!updateData.currentPassword) {
+            return res.status(400).json({
+              status: 'error',
+              message: 'Current password is required to change password'
+            });
+          }
+
+          const isMatch = await bcrypt.compare(
+            updateData.currentPassword,
+            userToUpdate.password
+          );
+
+          if (!isMatch) {
+            return res.status(401).json({
+              status: 'error',
+              message: 'Current password is incorrect'
+            });
+          }
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        updateData.password = await bcrypt.hash(updateData.password, salt);
+      }
+
       if (updateData.phoneNumber && updateData.phoneNumber !== userToUpdate.phoneNumber) {
         const existingPhone = await User.findOne({
           phoneNumber: updateData.phoneNumber,
@@ -283,6 +340,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updatedAt: new Date()
       };
 
+      if (updateObject.currentPassword) {
+        delete updateObject.currentPassword;
+      }
+
       const updatedUser = await User.findByIdAndUpdate(
         id,
         { $set: updateObject },
@@ -326,9 +387,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(403).json({ status: 'error', message: 'Forbidden: insufficient permissions' });
       }
 
-      await User.findByIdAndUpdate(id, { 
+      await User.findByIdAndUpdate(id, {
         isDeleted: true,
-        phoneNumber: '' 
+        phoneNumber: ''
       });
 
       return res.status(200).json({

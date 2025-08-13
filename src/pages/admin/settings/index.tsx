@@ -57,7 +57,7 @@ const phoneAssignmentSchema = z.object({
 const settingsSchema = z.object({
   name: z.string().min(2, "Admin name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
-  phone: z
+  phoneNumber: z
     .string()
     .regex(/^\+?[0-9]{7,15}$/, "Enter a valid phone number")
     .optional(),
@@ -76,7 +76,7 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 export const tenantInitialValues: SettingsFormValues = {
   name: "",
   email: "",
-  phone: "",
+  phoneNumber: "",
   password: "",
 };
 
@@ -86,6 +86,7 @@ export const SettingsPage = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: tenantInitialValues,
@@ -119,6 +120,36 @@ export const SettingsPage = () => {
   const selectedAssignedToType = phoneAssignmentForm.watch("assignedToType");
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
+        const userRes = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const userData = await userRes.json();
+        setUserData(userData.user);
+
+        form.reset({
+          name: userData.user?.name || "",
+          email: userData.user?.email || "",
+          phoneNumber: userData.user?.phoneNumber || "",
+          password: "",
+        });
+
+      } catch (error) {
+        console.error("Failed to fetch settings data:", error);
+        toast.error("Failed to load settings data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [form]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
@@ -140,19 +171,19 @@ export const SettingsPage = () => {
           setAssignments(assignmentsData.data);
         }
 
-        const apiConfigRes = await fetch("/api/global-settings", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const apiConfigData = await apiConfigRes.json();
-        console.log("API Config Data:", apiConfigData);
-        if (apiConfigData.status === "success" && apiConfigData.data) {
-          apiConfigForm.reset({
-            apiKey: apiConfigData.data.apiKey,
-            apiSecret: "",
+        if (userData?._id) {
+          const apiConfigRes = await fetch(`/api/global-settings?id=${userData._id}`, {
+            headers: { Authorization: `Bearer ${token}` },
           });
+          const apiConfigData = await apiConfigRes.json();
+          console.log("API Config Data:", apiConfigData);
+          if (apiConfigData.status === "success" && apiConfigData.data) {
+            apiConfigForm.reset({
+              apiKey: apiConfigData.data.apiKey ? apiConfigData.data.apiKey : "",
+              apiSecret: apiConfigData.data.apiSecret ? apiConfigData.data.apiSecret : "",
+            });
+          }
         }
-
-
       } catch (error) {
         console.error("Failed to fetch settings data:", error);
         toast.error("Failed to load settings data");
@@ -162,8 +193,7 @@ export const SettingsPage = () => {
     };
 
     fetchData();
-  }, []);
-
+  }, [userData]);
   useEffect(() => {
     const fetchUsersOrGroups = async () => {
       if (!selectedTenantId) return;
@@ -204,24 +234,48 @@ export const SettingsPage = () => {
 
   async function onSubmit(values: SettingsFormValues) {
     try {
+      setIsLoading(true);
       const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
       const payload = {
         name: values.name,
         email: values.email,
-        phone: values.phone,
-        ...(values.password ? { adminPassword: values.password } : {}),
+        phoneNumber: values.phoneNumber,
+        ...(values.password ? { password: values.password } : {}),
       };
-    } catch (error) {
-      console.error("Failed to save settings", error);
-      toast.error("Failed to save settings.");
+
+      const response = await fetch(`/api/users?id=${userData?._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        toast.success("User updated successfully");
+        setUserData({
+          ...userData,
+          ...payload
+        });
+      } else {
+        toast.error(data.message || "Failed to update user");
+      }
+    } catch (error: any) {
+      console.error("Update error:", error);
+      toast.error(error.message || "Failed to update user");
+    } finally {
+      setIsLoading(false);
     }
   }
-
   const handleApiConfigSubmit = async (values: ApiConfigFormValues) => {
     try {
       const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
-      const response = await fetch("/api/global-settings", {
-        method: "POST",
+      const response = await fetch(`/api/global-settings?id=${userData?._id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -312,14 +366,14 @@ export const SettingsPage = () => {
       </div>
 
       <div className="flex w-full flex-col gap-6">
-        <Tabs defaultValue="api_config">
+        <Tabs defaultValue="setting">
           <TabsList>
-            {/* <TabsTrigger value="setting">Setting</TabsTrigger> */}
+            <TabsTrigger value="setting">Setting</TabsTrigger>
             <TabsTrigger value="api_config">API Configuration</TabsTrigger>
             <TabsTrigger value="num_ass">Number Assignments</TabsTrigger>
 
           </TabsList>
-          {/* <TabsContent value="setting">
+          <TabsContent value="setting">
             <Form {...form}>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
@@ -362,7 +416,7 @@ export const SettingsPage = () => {
 
                         <FormField
                           control={form.control}
-                          name="phone"
+                          name="phoneNumber"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Phone</FormLabel>
@@ -407,7 +461,7 @@ export const SettingsPage = () => {
                 </div>
               </form>
             </Form>
-          </TabsContent> */}
+          </TabsContent>
           <TabsContent value="api_config">
             <Card>
               <CardHeader>
@@ -551,7 +605,8 @@ export const SettingsPage = () => {
                           name="assignedToId"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>                                {selectedAssignedToType === "user" ? "User" : "Group"}
+                              <FormLabel>
+                                {selectedAssignedToType === "user" ? "User" : "Group"}
                               </FormLabel>
                               <Select
                                 onValueChange={field.onChange}
@@ -565,19 +620,30 @@ export const SettingsPage = () => {
                                 </FormControl>
                                 <SelectContent>
                                   {selectedAssignedToType === "user" ? (
-                                    users.map((user) => (
-                                      <SelectItem key={user._id} value={user._id}>
-                                        {user.name}
+                                    users.length > 0 ? (
+                                      users.map((user) => (
+                                        <SelectItem key={user._id} value={user._id}>
+                                          {user.name}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="no-users" disabled>
+                                        No users found for this tenant
                                       </SelectItem>
-                                    ))
-                                  ) : (
+                                    )
+                                  ) : groups.length > 0 ? (
                                     groups.map((group) => (
                                       <SelectItem key={group._id} value={group._id}>
                                         {group.name}
                                       </SelectItem>
                                     ))
+                                  ) : (
+                                    <SelectItem value="no-groups" disabled>
+                                      No groups found for this tenant
+                                    </SelectItem>
                                   )}
                                 </SelectContent>
+
                               </Select>
                               <FormMessage />
                             </FormItem>

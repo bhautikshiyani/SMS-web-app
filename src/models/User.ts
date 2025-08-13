@@ -7,6 +7,7 @@ interface IUser extends Document {
   role: string;
   phoneNumber?: string;
   tenantId: string | null;
+  createdBy?: string | null; 
   isFirstLogin: boolean;
   tempPasswordExpiresAt?: Date;
   isDeleted: boolean;
@@ -24,6 +25,7 @@ const userSchema = new Schema<IUser>(
     phoneNumber: { type: String, default: '' },
     role: { type: String, default: 'OrgUser' },
     tenantId: { type: String, required: function () { return this.role !== 'SuperAdmin'; }, default: null },
+    createdBy: { type: String, default: null }, 
     isFirstLogin: { type: Boolean, default: true },
     tempPasswordExpiresAt: { type: Date },
     isDeleted: { type: Boolean, default: false },

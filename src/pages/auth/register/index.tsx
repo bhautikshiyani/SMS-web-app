@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import Cookies from "js-cookie";
 import {
     Form,
     FormControl,
@@ -46,8 +47,15 @@ export default function Register() {
 
     useEffect(() => {
         async function fetchTenants() {
+            const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
+
             try {
-                const res = await axios.get('/api/tenants')
+                const res = await axios.get('/api/tenants', {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
                 setTenants(res.data.data)
             } catch (err) {
                 console.error('Failed to fetch tenants', err)
@@ -85,7 +93,7 @@ export default function Register() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <div className="grid gap-4">
 
-                        
+
 
                         <FormField
                             control={form.control}
@@ -119,14 +127,14 @@ export default function Register() {
                                 </FormItem>
                             )}
                         />
-<FormField
+                        <FormField
                             control={form.control}
                             name="tenantId"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Tenant</FormLabel>
                                     <FormControl>
-                                        <Select  onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Select tenant" />
                                             </SelectTrigger>

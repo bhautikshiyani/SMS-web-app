@@ -2,10 +2,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { dbConnect } from '@/lib/db';
 import { verifyJwt } from '@/lib/auth';
 import ApiConfig from '@/models/ApiConfig';
+import User from '@/models/User';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();
 
+  // Check token
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) {
     return res.status(401).json({ status: 'error', message: 'No token provided' });
@@ -17,8 +19,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    const { id } = req.query;
+
+    if (!id || typeof id !== 'string') {
+      return res.status(400).json({ status: 'error', message: 'User ID is required' });
+    }
+
+    const userExists = await User.exists({ _id: id });
+    if (!userExists) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
+    }
+
     if (req.method === 'GET') {
-      const config = await ApiConfig.findOne({ lastUpdatedBy: currentUser.userId }).sort({ lastUpdatedAt: -1 });
+      const config = await ApiConfig.findOne({ userId: id }).sort({ lastUpdatedAt: -1 });
 
       if (!config) {
         return res.status(200).json({
@@ -26,36 +39,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           data: {
             apiKey: null,
             apiSecret: null,
-            lastUpdatedBy: currentUser.userId,
+            lastUpdatedBy: null,
             lastUpdatedAt: null,
             _id: null,
+            userId: id
           },
           message: 'No API configuration found for this user'
         });
       }
 
-      const { apiSecret, ...safeConfig } = config.toObject();
-      return res.status(200).json({ status: 'success', data: safeConfig });
+      const configObj = config.toObject();
+      console.log('API Config:', configObj);
+
+      return res.status(200).json({
+        status: 'success',
+        data: configObj
+      });
     }
 
-    if (req.method === 'POST' || req.method === 'PUT') {
+    if (req.method === 'PUT') {
       const { apiKey, apiSecret } = req.body;
 
-      if (!apiKey || !apiSecret) {
-        return res.status(400).json({ status: 'error', message: 'Both apiKey and apiSecret are required' });
+      if (!apiKey && !apiSecret) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Either apiKey or apiSecret is required for update'
+        });
       }
 
-      const newConfig = new ApiConfig({
-        apiKey,
-        apiSecret,
-        lastUpdatedBy: currentUser.userId
+      const now = new Date();
+
+      const configExists = await ApiConfig.exists({ userId: id });
+
+      const config = await ApiConfig.findOneAndUpdate(
+        { userId: id },
+        {
+          ...(apiKey !== undefined && { apiKey }),
+          ...(apiSecret !== undefined && { apiSecret }),
+          lastUpdatedBy: currentUser.userId,
+          updatedAt: now,
+          ...(configExists ? {} : { createdAt: now, userId: id })
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+
+      const configObj = config.toObject();
+
+      return res.status(200).json({
+        status: 'success',
+        data:configObj,
+        message: configExists
+          ? 'API configuration updated successfully'
+          : 'API configuration created successfully'
       });
-
-      await newConfig.save();
-
-      const { apiSecret: _, ...safeConfig } = newConfig.toObject();
-
-      return res.status(200).json({ status: 'success', data: safeConfig, message: 'API configuration saved successfully' });
     }
 
     return res.status(405).json({ status: 'error', message: 'Method not allowed' });
