@@ -39,9 +39,21 @@ import {
   GroupAddFormType,
   groupAddSchema,
 } from "@/types/validation/validationSchema";
-import MultipleSelector from "@/components/ui/multiple-selector";
+import MultipleSelector, { Option } from "@/components/ui/multiple-selector";
 import { PhoneInput } from "@/components/ui/phone-input";
-
+const OPTIONS: Option[] = [
+  { label: "nextjs", value: "Nextjs" },
+  { label: "React", value: "react" },
+  { label: "Remix", value: "remix" },
+  { label: "Vite", value: "vite" },
+  { label: "Nuxt", value: "nuxt" },
+  { label: "Vue", value: "vue" },
+  { label: "Svelte", value: "svelte" },
+  { label: "Angular", value: "angular" },
+  { label: "Ember", value: "ember", disable: true },
+  { label: "Gatsby", value: "gatsby", disable: true },
+  { label: "Astro", value: "astro" },
+];
 interface AddGroupProps {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -49,9 +61,16 @@ interface AddGroupProps {
   onSuccess?: () => void;
 }
 
-export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProps) {
+export function AddGroup({
+  open,
+  setOpen,
+  initialData,
+  onSuccess,
+}: AddGroupProps) {
   const [tenants, setTenants] = useState<{ _id: string; name: string }[]>([]);
-  const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(initialData?.tenantId);
+  const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(
+    initialData?.tenantId
+  );
   const [users, setUsers] = useState<{ _id: string; name: string }[]>([]);
   console.log("users:", users);
   const form = useForm<GroupAddFormType>({
@@ -59,7 +78,12 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
     defaultValues: initialData,
   });
 
-  const { control, handleSubmit, reset, formState: { isSubmitting } } = form;
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = form;
 
   // Reset form when initialData changes
   useEffect(() => {
@@ -74,7 +98,9 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
     const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
     async function fetchTenants() {
       try {
-        const res = await axios.get("/api/tenants", { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get("/api/tenants", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setTenants(res.data.data);
       } catch (err) {
         console.error("Error fetching tenants:", err);
@@ -108,7 +134,7 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
   async function onSubmit(values: z.infer<typeof groupAddSchema>) {
     const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
     const userIds = Array.isArray(values.users)
-      ? values.users.map(u => (typeof u === 'string' ? u : u.value))
+      ? values.users.map((u) => (typeof u === "string" ? u : u.value))
       : [];
 
     const payload = {
@@ -118,10 +144,14 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
 
     try {
       if (initialData?._id) {
-        await axios.put(`/api/group?id=${initialData._id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.put(`/api/group?id=${initialData._id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         toast.success("Group updated successfully");
       } else {
-        await axios.post("/api/group", payload, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post("/api/group", payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         toast.success("Group created successfully");
       }
       setOpen(false);
@@ -134,106 +164,156 @@ export function AddGroup({ open, setOpen, initialData, onSuccess }: AddGroupProp
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{initialData?._id ? "Edit Group" : "Add New Group"}</DialogTitle>
-          <DialogDescription>
-            {initialData?._id ? "Update group details." : "Create a new group."}
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <FormField control={control} name="picture" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Images</FormLabel>
-                <FormControl>
-                  <FileUploader value={field.value} onValueChange={field.onChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+      <Form {...form}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogContent className="sm:max-w-[424px]">
+            <DialogHeader>
+              <DialogTitle>
+                {initialData?._id ? "Edit Group" : "Add New Group"}
+              </DialogTitle>
+              <DialogDescription>
+                {initialData?._id
+                  ? "Update group details."
+                  : "Create a new group."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 px-1 max-h-[calc(100vh-200px)] overflow-auto">
+              <FormField
+                control={control}
+                name="picture"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Images</FormLabel>
+                    <FormControl>
+                      <FileUploader
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField control={control} name="name" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Group Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Group Name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+              <FormField
+                control={control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Group Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Group Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField control={control} name="description" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Input placeholder="Description" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+              <FormField
+                control={control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField control={control} name="tenantId" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tenant</FormLabel>
-                <FormControl>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedTenantId(value); // Update tenantId state to fetch users
-                    }}
-                    value={field.value || ""}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select tenant" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tenants.map(t => (
-                        <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+              <FormField
+                control={control}
+                name="tenantId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tenant</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedTenantId(value); // Update tenantId state to fetch users
+                        }}
+                        value={field.value || ""}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select tenant" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tenants.map((t) => (
+                            <SelectItem key={t._id} value={t._id}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField control={form.control} name="users" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Add Users</FormLabel>
-                <FormControl>
-                  <MultipleSelector
-                    defaultOptions={users.map(u => ({ label: u.name, value: u._id }))}
-                    placeholder="Select users..."
-                    value={Array.isArray(field.value) ? field.value : []}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+              <FormField
+                control={form.control}
+                name="users"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Add Users</FormLabel>
+                    <FormControl>
+                      {users.length > 0 && (
+                        <MultipleSelector
+                          defaultOptions={users.map((u) => ({
+                            label: u.name,
+                            value: u._id,
+                          }))}
+                          placeholder="Select users..."
+                          value={Array.isArray(field.value) ? field.value : []}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField control={form.control} name="phoneNumber" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl>
-                  <PhoneInput {...field} defaultCountry="IN" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <PhoneInput {...field} defaultCountry="IN" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline" type="button" disabled={isSubmitting}>Cancel</Button>
+                <Button variant="outline" type="button" disabled={isSubmitting}>
+                  Cancel
+                </Button>
               </DialogClose>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : (initialData?._id ? "Update" : "Create Group")}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : initialData?._id ? (
+                  "Update"
+                ) : (
+                  "Create Group"
+                )}
               </Button>
             </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+          </DialogContent>
+        </form>
+      </Form>
     </Dialog>
   );
 }

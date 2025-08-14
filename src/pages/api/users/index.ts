@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const { page = 1, limit = 10, search = '', tenantId } = req.query;
+      const { page = 1, limit = 10, search = '', tenantId, status } = req.query;
 
       const pageNumber = parseInt(page as string);
       const limitNumber = parseInt(limit as string);
@@ -29,6 +29,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const filter: any = { isDeleted: false };
 
+      if (status === 'active') {
+        filter.isActive = true;
+      } else if (status === 'inactive') {
+        filter.isActive = false;
+      }
+      if (!tenantId) {
+        return res.status(400).json({ status: 'error', message: 'tenantId is required for this user' });
+      }
       if (tenantId && typeof tenantId === 'string') {
         const tenant = await Tenant.findById(tenantId).select('-__v -createdAt -updatedAt').lean();
         if (!tenant) {
@@ -48,6 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           filter.tenantId = currentUser.tenantId;
         }
       }
+
       if (currentUser.role === 'SuperAdmin') {
         filter.createdBy = currentUser.userId;
       }
@@ -101,6 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ status: 'error', message: err.message || 'Internal Server Error' });
     }
   }
+
 
   if (req.method === 'POST') {
     const currentUser = verifyJwt(token);

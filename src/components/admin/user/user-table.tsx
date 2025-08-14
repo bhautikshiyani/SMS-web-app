@@ -24,7 +24,11 @@ interface UserTableProps {
   tenantId?: string | null;
   onEditUser: (user: any) => void;
 }
-export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProps) {
+export function UserDataTable({
+  reloadKey,
+  tenantId,
+  onEditUser,
+}: UserTableProps) {
   // const dispatch = useAppDispatch();
   const [loading, setLoading] = React.useState(false);
   const [userData, setUserData] = React.useState<any>({
@@ -63,7 +67,8 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
       params.append("limit", pageSize.toString());
 
       if (search) params.append("search", search);
-      if (roleFilter && roleFilter !== "all") params.append("role", roleFilter);
+      if (roleFilter && roleFilter !== "all")
+        params.append("status", roleFilter);
 
       const response = await axios.get(`/api/users?${params.toString()}`, {
         headers: {
@@ -94,6 +99,7 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
   };
 
   React.useEffect(() => {
+    if (!tenantId) return;
     fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
   }, [reloadKey, tenantId, pagination.pageIndex, pagination.pageSize]);
   const deleteUser = async (userId: string) => {
@@ -136,23 +142,29 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
     fetchData(pageIndex, pageSize, searchQuery, role);
   };
 
-  React.useEffect(() => {
-    fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
-  }, []);
+  // React.useEffect(() => {
+  //   fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
+  // }, []);
   const [switchLoading, setSwitchLoading] = React.useState(false);
 
-  const handleToggle = async (user:any) => {
+  const handleToggle = async (user: any) => {
     setSwitchLoading(true);
     const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
 
     try {
-      await axios.put(`/api/users?id=${user._id}`, {
-        isActive: !user.isActive,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(
+        `/api/users?id=${user._id}`,
+        {
+          isActive: !user.isActive,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      toast.success(`User ${!user.isActive ? "activated" : "deactivated"} successfully`);
+      toast.success(
+        `User ${!user.isActive ? "activated" : "deactivated"} successfully`
+      );
       fetchData(pagination.pageIndex, pagination.pageSize, searchQuery, role);
     } catch (error) {
       toast.error("Failed to update user status");
@@ -270,7 +282,7 @@ export function UserDataTable({ reloadKey, tenantId, onEditUser }: UserTableProp
     name: "Status",
     options: [
       { label: "Active", value: "active" },
-      { label: "Disable", value: "disabled" },
+      { label: "Disable", value: "inactive" },
     ],
     value: role,
     onChange: handleRoleChange,

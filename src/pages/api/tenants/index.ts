@@ -57,8 +57,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (existing) return sendError(res, 400, 'Tenant with this email already exists');
       }
 
-      let retentionYears = retentionPeriodYears || 7;
-
+      const retentionYears = retentionPeriodYears || 7;
+      
       if (retentionYears < 1 || retentionYears > 10) {
         return sendError(res, 400, 'Retention period must be between 1 and 10 years');
       }

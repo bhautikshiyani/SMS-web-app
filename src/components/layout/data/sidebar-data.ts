@@ -18,13 +18,13 @@ export const sidebarData: SidebarData = {
     {
       title: "General",
       items: [
+        // {
+        //   title: "Dashboard",
+        //   url: "/admin/dashboard",
+        //   icon: LayoutDashboard,
+        // },
         {
-          title: "Dashboard",
-          url: "/admin/dashboard",
-          icon: LayoutDashboard,
-        },
-        {
-          title: "Tenant",
+          title: "Tenants",
           url: "/admin/tenant",
           icon: Building2,
         },

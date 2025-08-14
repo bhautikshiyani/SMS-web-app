@@ -146,8 +146,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        // 1️⃣ Check if this entity already has an assignment
-        let existingAssignmentForEntity = await PhoneAssignment.findOne({
+        const existingAssignmentForEntity = await PhoneAssignment.findOne({
           assignedToType,
           assignedToId
         }).session(session);

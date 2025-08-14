@@ -18,6 +18,7 @@ import axios from "axios";
 import { formatDate, getImageSrc } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import DeleteTenantModal from "./delete-tenant-modal";
 
 interface TenantTableProps {
   reloadKey?: number;
@@ -35,7 +36,11 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
     totalPages: 1,
   });
   const [searchTerm, setSearchTerm] = React.useState("");
-
+  const [selectedTenant, setSelectedTenant] = React.useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [modalOpen, setModalOpen] = React.useState(false);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
@@ -81,12 +86,21 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
     fetchTenants();
   }, [reloadKey]);
 
+  const openDeleteModal = (id: string, name: string) => {
+    setSelectedTenant({ id, name });
+    setModalOpen(true);
+  };
+  const handleClose = () => {
+    setModalOpen(false);
+    setSelectedTenant(null);
+  };
+
   const deleteTenant = async (id: string, name: string) => {
     const confirmation = prompt(
       `Type the tenant's name "${name}" to confirm deletion:`
     );
 
-    if (confirmation === null) return; 
+    if (confirmation === null) return;
     if (confirmation.trim() !== name) {
       toast.error("Name did not match. Deletion cancelled.");
       return;
@@ -229,10 +243,16 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
         <Button
           size="icon"
           className="cursor-pointer"
+          // onClick={(e) => {
+          //   e.stopPropagation();
+          //   if (row.original._id) {
+          //     deleteTenant(row.original._id, row.original.name);
+          //   }
+          // }}
           onClick={(e) => {
             e.stopPropagation();
             if (row.original._id) {
-              deleteTenant(row.original._id, row.original.name);
+              openDeleteModal(row.original._id, row.original.name);
             }
           }}
         >
@@ -240,38 +260,47 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
           <span className="sr-only">Delete Tenant</span>
         </Button>
       ),
-    }
-
+    },
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={tenantData.tenants}
-      loading={loading}
-      pageCount={tenantData.totalPages}
-      pageIndex={pagination.pageIndex}
-      pageSize={pagination.pageSize}
-      totalItems={tenantData.totalTenants}
-      searchPlaceholder="Search tenants..."
-      onSearch={(val: string) => {
-        setSearchTerm(val);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      }}
-      enableSelection={false}
-      enableColumnVisibility={true}
-      enablePagination={true}
-      onPaginationChange={(pageIndex, pageSize) =>
-        setPagination({ pageIndex, pageSize })
-      }
-      getRowId={(row) => row._id || String(Math.random())}
-      emptyMessage="No tenants found."
-      loadingMessage="Loading tenants..."
-
-      onRowClick={(row) => {
-        const id = row._id;
-        if (id) router.push(`/admin/tenant/users?tenantId=${id}`);
-      }}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={tenantData.tenants}
+        loading={loading}
+        pageCount={tenantData.totalPages}
+        pageIndex={pagination.pageIndex}
+        pageSize={pagination.pageSize}
+        totalItems={tenantData.totalTenants}
+        searchPlaceholder="Search tenants..."
+        onSearch={(val: string) => {
+          setSearchTerm(val);
+          setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        }}
+        enableSelection={false}
+        enableColumnVisibility={true}
+        enablePagination={true}
+        onPaginationChange={(pageIndex, pageSize) =>
+          setPagination({ pageIndex, pageSize })
+        }
+        getRowId={(row) => row._id || String(Math.random())}
+        emptyMessage="No tenants found."
+        loadingMessage="Loading tenants..."
+        onRowClick={(row) => {
+          const id = row._id;
+          if (id) router.push(`/admin/tenant/users?tenantId=${id}`);
+        }}
+      />
+      {selectedTenant && (
+        <DeleteTenantModal
+          open={modalOpen}
+          onClose={handleClose}
+          tenantId={selectedTenant.id}
+          tenantName={selectedTenant.name}
+          onDeleted={fetchTenants}
+        />
+      )}
+    </>
   );
 }

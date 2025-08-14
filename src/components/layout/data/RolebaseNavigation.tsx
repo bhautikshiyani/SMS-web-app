@@ -1,7 +1,7 @@
 import { UserRole } from "@/types/user";
 
 export const roleBasedNav: Record<UserRole, string[]> = {
-  SuperAdmin: ["Dashboard", "Tenant", "User","General Settings"],
+  SuperAdmin: [ "Tenants", "User","General Settings"],
   Admin: ["Messages", "Contacts", "Voicemail", "Phone", "Settings"],
   OrgManager: ["Messages", "Contacts", "Voicemail", "Phone", "Settings"],
   OrgUser: ["Messages", "Contacts", "Voicemail", "Phone", "Settings"],
@@ -9,7 +9,7 @@ export const roleBasedNav: Record<UserRole, string[]> = {
 
 // Flattened route map by title
 export const roleAccessMap: Record<UserRole, string[]> = {
-  SuperAdmin: ["/", "/admin/dashboard", "/admin/tenant","/admin/tenant/users", "/admin/tenant/groups", "/admin/tenant/settings","/admin/settings", ],
+  SuperAdmin: ["/", "/admin/tenant","/admin/tenant/users", "/admin/tenant/groups", "/admin/tenant/settings","/admin/settings", ],
   Admin: ["/", "/messages", "/contacts", "/voicemail", "/phone", "/settings"],
   OrgManager: [
     "/",
