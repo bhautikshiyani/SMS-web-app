@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import Tenant from '@/models/Tenant';
+import PhoneAssignment from '@/models/PhoneAssignment';
 import { dbConnect } from '@/lib/db';
 import { verifyJwt } from '@/lib/auth';
 import mongoose from 'mongoose';
@@ -38,8 +39,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'DELETE') {
       if (user.role !== 'SuperAdmin') return sendError(res, 403, 'Forbidden: only SuperAdmin can delete');
-      const deletedTenant = await Tenant.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
-      return res.status(200).json({ status: 'success', message: 'Tenant soft deleted', data: deletedTenant });
+
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        const deletedTenant = await Tenant.findByIdAndUpdate(
+          id,
+          { isDeleted: true },
+          { new: true, session }
+        );
+
+        if (!deletedTenant) {
+          await session.abortTransaction();
+          session.endSession();
+          return sendError(res, 404, 'Tenant not found');
+        }
+
+        await PhoneAssignment.updateMany(
+          { tenantId: id },
+          { isDeleted: true },
+          { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+          status: 'success',
+          message: 'Tenant soft deleted and phone assignments soft deleted',
+          data: deletedTenant
+        });
+      } catch (error: any) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error('Delete Tenant Error:', error);
+        return sendError(res, 500, error.message || 'Internal Server Error');
+      }
     }
 
     return sendError(res, 405, 'Method not allowed');

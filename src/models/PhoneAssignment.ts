@@ -9,6 +9,7 @@ export interface IPhoneAssignment extends Document {
   assignedById: mongoose.Types.ObjectId;
   assignedAt: Date;
   isActive: boolean;
+  isDeleted: boolean;
 }
 
 const PhoneAssignmentSchema = new Schema<IPhoneAssignment>({
@@ -19,8 +20,9 @@ const PhoneAssignmentSchema = new Schema<IPhoneAssignment>({
   assignedByName: { type: String, required: true },
   assignedById: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   assignedAt: { type: Date, default: Date.now },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false }, 
 });
 
-export default mongoose.models.PhoneAssignment || 
+export default mongoose.models.PhoneAssignment ||
   mongoose.model<IPhoneAssignment>('PhoneAssignment', PhoneAssignmentSchema);

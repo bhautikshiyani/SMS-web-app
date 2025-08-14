@@ -11,7 +11,7 @@ export interface ITenant {
     voicemail: boolean;
     phone: boolean;
   };
-  retentionPeriodYears: number;
+  retentionPeriodYears: number; // in years
   isDeleted: boolean;
   createdBy?: Types.ObjectId; 
   createdAt?: Date;
@@ -30,7 +30,12 @@ const TenantSchema = new Schema<ITenant>(
       voicemail: { type: Boolean, default: true },
       phone: { type: Boolean, default: true },
     },
-    retentionPeriodYears: { type: Number, default: 7 },
+    retentionPeriodYears: { 
+      type: Number, 
+      default: 7, 
+      min: [1, 'Retention period must be at least 1 year'],
+      max: [10, 'Retention period cannot exceed 10 years']
+    },
     isDeleted: { type: Boolean, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' }, 
   },

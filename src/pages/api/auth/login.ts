@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ status: 'error', message: 'Method Not Allowed' });
     }
 
-    const { email, password, tenantId } = req.body;
+    const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ status: 'error', message: 'Missing fields' });
     }
@@ -31,14 +31,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (!user.isActive) {
       return res.status(403).json({ status: 'error', message: 'Your account is disabled. Please contact admin.' });
-    }
-
-
-    if (user.role !== 'SuperAdmin' && !tenantId) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Tenant ID is required for non-SuperAdmin users'
-      });
     }
 
     if (

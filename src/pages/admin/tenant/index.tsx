@@ -44,7 +44,7 @@ const Tenant = () => {
     <div className="flex w-full flex-col justify-start gap-6">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Company</h2>
+          <h2 className="text-2xl font-bold">Tenants</h2>
           <Button className="cursor-pointer" onClick={handleAddClick}>
             <PlusIcon className="h-4 w-4" />
             Add New

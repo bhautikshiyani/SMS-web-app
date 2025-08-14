@@ -32,6 +32,7 @@ export default async function handler(
   }
 
   const currentUser = verifyJwt(token);
+  console.log('Current User:', currentUser);
   if (!currentUser) {
     return res.status(401).json({ status: 'error', message: 'Invalid token' });
   }
@@ -56,9 +57,12 @@ export default async function handler(
         return res.status(404).json({ status: 'error', message: 'Group not found' });
       }
 
-      if (currentUser.role !== 'SuperAdmin' && group.tenantId._id.toString() !== currentUser.tenantId) {
+      if (
+        currentUser.role === 'SuperAdmin' && group.createdBy.toString() !== currentUser._id
+      ) {
         return res.status(403).json({ status: 'error', message: 'Forbidden: cannot access this group' });
       }
+
 
       const { tenantId, ...rest } = group;
       const responseData: GroupDoc = { ...rest, tenant: tenantId };

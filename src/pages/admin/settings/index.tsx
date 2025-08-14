@@ -421,7 +421,7 @@ export const SettingsPage = () => {
                             <FormItem>
                               <FormLabel>Phone</FormLabel>
                               <FormControl>
-                                <PhoneInput {...field} defaultCountry="IN" />
+                                <PhoneInput {...field} defaultCountry="US" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>

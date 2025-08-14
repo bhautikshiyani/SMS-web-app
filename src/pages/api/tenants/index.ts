@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const query: any = {
         isDeleted: false,
-        createdBy: user.userId, 
+        createdBy: user.userId,
       };
 
       if (search) query.name = { $regex: search, $options: 'i' };
@@ -56,6 +56,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const existing = await Tenant.findOne({ email: email.trim().toLowerCase() });
         if (existing) return sendError(res, 400, 'Tenant with this email already exists');
       }
+
+      let retentionYears = retentionPeriodYears || 7;
+
+      if (retentionYears < 1 || retentionYears > 10) {
+        return sendError(res, 400, 'Retention period must be between 1 and 10 years');
+      }
+
       const tenant = new Tenant({
         name,
         email: email?.trim().toLowerCase() || '',
@@ -64,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         featureToggles: featureToggles || { messages: true, contacts: true, voicemail: true, phone: true },
         retentionPeriodYears: retentionPeriodYears || 7,
         isDeleted: false,
-        createdBy: user.userId, 
+        createdBy: user.userId,
       });
       await tenant.save();
       return res.status(201).json({ status: 'success', data: tenant });

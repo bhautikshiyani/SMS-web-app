@@ -4,6 +4,7 @@ import { verifyJwt } from '@/lib/auth';
 import Group from '@/models/Group';
 import mongoose from 'mongoose';
 import Tenant from '@/models/Tenant';
+import User from '@/models/User';
 
 function sendError(res: NextApiResponse, statusCode: number, message: string) {
     return res.status(statusCode).json({
@@ -20,21 +21,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!token) return sendError(res, 401, 'No token provided');
 
     const currentUser = verifyJwt(token);
+    console.log('Current User:', currentUser);
     if (!currentUser || (currentUser.role !== 'SuperAdmin' && currentUser.role !== 'Admin')) {
         return sendError(res, 403, 'Forbidden: insufficient permissions');
     }
 
     try {
         if (req.method === 'GET') {
+            
             const { page = 1, limit = 10, search = '', tenantId } = req.query;
 
             const filter: any = { isDeleted: false };
 
 
             if (currentUser.role === 'SuperAdmin') {
-                if (tenantId) {
-                    filter.tenantId = tenantId;
-                }
+                filter.createdBy = currentUser.userId;
+
+                if (tenantId) filter.tenantId = tenantId;
             } else {
                 if (!currentUser.tenantId) {
                     return sendError(res, 400, 'tenantId is required for this user');
@@ -66,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 .lean();
 
             const transformedUsers = groups.map(group => {
-                const { tenantId, ...rest } = group;
+                const { tenantId, createdBy, ...rest } = group;
                 return {
                     ...rest,
                     tenant: tenantId,
@@ -88,30 +91,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (req.method === 'POST') {
             const { name, description, phoneNumber, users = [], tenantId } = req.body;
 
-            const effectiveTenantId =
-                currentUser.role === 'SuperAdmin'
-                    ? tenantId
-                    : currentUser.tenantId;
-
-            if (!name || !effectiveTenantId) {
-                return sendError(res, 400, 'Missing required fields: name, tenantId');
+            const tenant = await Tenant.findOne({ _id: tenantId, createdBy: currentUser.userId });
+            if (!tenant) {
+                return res.status(403).json({
+                    status: 'error',
+                    message: 'Tenant not found or you do not have permission to create group in this tenant.',
+                });
             }
 
             const existingGroup = await Group.findOne({
                 name: name.trim(),
-                tenantId: effectiveTenantId,
+                tenantId,
                 isDeleted: false,
             });
             if (existingGroup) {
                 return sendError(res, 409, 'Group with this name already exists in this tenant');
             }
 
+            if (users.length > 0) {
+                const validUsers = await User.find({
+                    _id: { $in: users },
+                    tenantId: tenantId,
+                    isDeleted: false
+                }).select('_id');
+
+                const validUserIds = validUsers.map((u:any) => u._id.toString());
+                const invalidUsers = users.filter((id: string) => !validUserIds.includes(id));
+
+                if (invalidUsers.length > 0) {
+                    return res.status(400).json({
+                        status: 'error',
+                        message: `The following user(s) are not found in this tenant: ${invalidUsers.join(', ')}`
+                    });
+                }
+            }
+
+
             const group = new Group({
                 name: name.trim(),
                 description: description || '',
                 phoneNumber: phoneNumber || '',
                 users: users.map((id: string) => new mongoose.Types.ObjectId(id)),
-                tenantId: effectiveTenantId,
+                tenantId,
+                createdBy: currentUser.userId,
+
             });
 
             await group.save();
@@ -137,8 +160,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             if (
-                currentUser.role !== 'SuperAdmin' &&
-                group.tenantId.toString() !== currentUser.tenantId
+                currentUser.role === 'SuperAdmin' && group.createdBy.toString() !== currentUser.userId
             ) {
                 return sendError(res, 403, 'Forbidden: insufficient permissions');
             }
@@ -183,7 +205,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const { id } = req.query;
             if (!id || !mongoose.Types.ObjectId.isValid(id as string)) {
                 return sendError(res, 400, 'Invalid group ID');
-            }   
+            }
 
             const group = await Group.findOne({ _id: id, isDeleted: false });
             if (!group) {
@@ -191,8 +213,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
 
             if (
-                currentUser.role !== 'SuperAdmin' &&
-                group.tenantId.toString() !== currentUser.tenantId
+                currentUser.role === 'SuperAdmin' && group.createdBy.toString() !== currentUser._id
+
             ) {
                 return sendError(res, 403, 'Forbidden: insufficient permissions');
             }

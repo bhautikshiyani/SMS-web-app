@@ -10,7 +10,7 @@ import mongoose from 'mongoose';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();
   const token = req.headers.authorization?.split(' ')[1];
-  
+
   if (!token) {
     return res.status(401).json({ status: 'error', message: 'No token provided' });
   }
@@ -24,16 +24,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'GET') {
       const { page = 1, limit = 10, search = '', tenantId, assignedToType } = req.query;
 
-      const filter: any = {};
-      
+      const filter: any = {
+        assignedById: currentUser.userId,
+        isDeleted: false,
+
+      };
+
       if (search) {
         filter.phoneNumber = { $regex: search, $options: 'i' };
       }
-      
+
       if (tenantId) {
         filter.tenantId = tenantId;
       }
-      
+
       if (assignedToType) {
         filter.assignedToType = assignedToType;
       }
@@ -43,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const skip = (pageNumber - 1) * limitNumber;
 
       const total = await PhoneAssignment.countDocuments(filter);
-      
+
       const assignments = await PhoneAssignment.find(filter)
         .populate('tenantId', 'name')
         .sort({ assignedAt: -1 })
@@ -53,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const enrichedAssignments = await Promise.all(assignments.map(async (assignment) => {
         let assignedTo = null;
-        
+
         if (assignment.assignedToType === 'user') {
           const user = await User.findById(assignment.assignedToId)
             .select('name email role phoneNumber')
@@ -65,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .lean();
           assignedTo = group;
         }
-        
+
         return {
           ...assignment,
           assignedTo,
@@ -88,19 +92,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'POST') {
       const { phoneNumber, tenantId, assignedToType, assignedToId } = req.body;
-      
+
       if (!phoneNumber || !tenantId || !assignedToType || !assignedToId) {
-        return res.status(400).json({ 
-          status: 'error', 
-          message: 'Missing required fields: phoneNumber, tenantId, assignedToType, assignedToId' 
+        return res.status(400).json({
+          status: 'error',
+          message: 'Missing required fields: phoneNumber, tenantId, assignedToType, assignedToId'
         });
       }
 
       const tenant = await Tenant.findById(tenantId);
       if (!tenant) {
-        return res.status(404).json({ 
-          status: 'error', 
-          message: 'Tenant not found' 
+        return res.status(404).json({
+          status: 'error',
+          message: 'Tenant not found'
         });
       }
 
@@ -108,51 +112,89 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       session.startTransaction();
 
       try {
+        let assignedEntity;
+
         if (assignedToType === 'user') {
-          const user = await User.findOne({ 
-            _id: assignedToId, 
-            tenantId, 
-            isDeleted: false 
+          assignedEntity = await User.findOne({
+            _id: assignedToId,
+            tenantId,
+            isDeleted: false
           }).session(session);
-          
-          if (!user) {
+
+          if (!assignedEntity) {
             await session.abortTransaction();
             session.endSession();
-            return res.status(404).json({ 
-              status: 'error', 
-              message: 'User not found in this tenant' 
+            return res.status(404).json({
+              status: 'error',
+              message: 'User not found in this tenant'
             });
           }
-
-          user.phoneNumber = phoneNumber;
-          await user.save({ session });
         } else {
-          const group = await Group.findOne({ 
-            _id: assignedToId, 
-            tenantId, 
-            isDeleted: false 
+          assignedEntity = await Group.findOne({
+            _id: assignedToId,
+            tenantId,
+            isDeleted: false
           }).session(session);
-          
-          if (!group) {
+
+          if (!assignedEntity) {
             await session.abortTransaction();
             session.endSession();
-            return res.status(404).json({ 
-              status: 'error', 
-              message: 'Group not found in this tenant' 
+            return res.status(404).json({
+              status: 'error',
+              message: 'Group not found in this tenant'
             });
           }
-
-          group.phoneNumber = phoneNumber;
-          await group.save({ session });
         }
 
-        const existingAssignment = await PhoneAssignment.findOne({ phoneNumber }).session(session);
-        if (existingAssignment) {
+        // 1️⃣ Check if this entity already has an assignment
+        let existingAssignmentForEntity = await PhoneAssignment.findOne({
+          assignedToType,
+          assignedToId
+        }).session(session);
+
+        if (existingAssignmentForEntity) {
+          // If updating to a new number, make sure the new number isn't already assigned to another entity
+          const existingNumberAssignment = await PhoneAssignment.findOne({
+            phoneNumber,
+            _id: { $ne: existingAssignmentForEntity._id }
+          }).session(session);
+
+          if (existingNumberAssignment) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(409).json({
+              status: 'error',
+              message: 'This phone number is already assigned to another entity'
+            });
+          }
+
+          // Update existing assignment
+          existingAssignmentForEntity.phoneNumber = phoneNumber;
+          await existingAssignmentForEntity.save({ session });
+
+          // Also update phone number in user/group document
+          assignedEntity.phoneNumber = phoneNumber;
+          await assignedEntity.save({ session });
+
+          await session.commitTransaction();
+          session.endSession();
+          return res.status(200).json({
+            status: 'success',
+            data: existingAssignmentForEntity,
+            message: 'Phone number updated successfully'
+          });
+        }
+
+        const existingNumberAssignment = await PhoneAssignment.findOne({
+          phoneNumber
+        }).session(session);
+
+        if (existingNumberAssignment) {
           await session.abortTransaction();
           session.endSession();
-          return res.status(409).json({ 
-            status: 'error', 
-            message: 'This phone number is already assigned' 
+          return res.status(409).json({
+            status: 'error',
+            message: 'This phone number is already assigned to another entity'
           });
         }
 
@@ -166,6 +208,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
 
         await newAssignment.save({ session });
+
+        assignedEntity.phoneNumber = phoneNumber;
+        await assignedEntity.save({ session });
+
         await session.commitTransaction();
         session.endSession();
 
@@ -184,21 +230,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'PUT') {
       const { id } = req.query;
       const { isActive } = req.body;
-      
+
       if (!id) {
-        return res.status(400).json({ 
-          status: 'error', 
-          message: 'Assignment ID is required' 
+        return res.status(400).json({
+          status: 'error',
+          message: 'Assignment ID is required'
         });
       }
 
       const assignment = await PhoneAssignment.findById(id);
       if (!assignment) {
-        return res.status(404).json({ 
-          status: 'error', 
-          message: 'Assignment not found' 
+        return res.status(404).json({
+          status: 'error',
+          message: 'Assignment not found'
         });
       }
+      if (assignment.assignedById.toString() !== currentUser.userId) {
+        return res.status(403).json({ status: 'error', message: 'Forbidden: not your assignment' });
+      }
+
+
 
       if (typeof isActive === 'boolean') {
         assignment.isActive = isActive;
@@ -214,11 +265,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'DELETE') {
       const { id } = req.query;
-      
+
       if (!id) {
-        return res.status(400).json({ 
-          status: 'error', 
-          message: 'Assignment ID is required' 
+        return res.status(400).json({
+          status: 'error',
+          message: 'Assignment ID is required'
         });
       }
 
@@ -230,10 +281,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!assignment) {
           await session.abortTransaction();
           session.endSession();
-          return res.status(404).json({ 
-            status: 'error', 
-            message: 'Assignment not found' 
+          return res.status(404).json({
+            status: 'error',
+            message: 'Assignment not found'
           });
+        }
+        if (assignment.assignedById.toString() !== currentUser.userId) {
+          return res.status(403).json({ status: 'error', message: 'Forbidden: not your assignment' });
         }
 
         if (assignment.assignedToType === 'user') {
@@ -268,9 +322,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ status: 'error', message: 'Method not allowed' });
   } catch (error: any) {
     console.error('Phone Assignment Error:', error);
-    return res.status(500).json({ 
-      status: 'error', 
-      message: error.message || 'Internal Server Error' 
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Internal Server Error'
     });
   }
 }

@@ -81,11 +81,21 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
     fetchTenants();
   }, [reloadKey]);
 
-  const deleteTenant = async (id: string) => {
+  const deleteTenant = async (id: string, name: string) => {
+    const confirmation = prompt(
+      `Type the tenant's name "${name}" to confirm deletion:`
+    );
+
+    if (confirmation === null) return; 
+    if (confirmation.trim() !== name) {
+      toast.error("Name did not match. Deletion cancelled.");
+      return;
+    }
+
     const token = Cookies.get(process.env.NEXT_PUBLIC_TOKEN_KEY!);
     try {
       await toast.promise(
-        axios.delete(`/api/tenants?id=${id}`, {
+        axios.delete(`/api/tenants/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -128,7 +138,7 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
     },
     {
       accessorKey: "phone",
-      header: "phone",
+      header: "Phone Number",
       cell: ({ row }) => row.original.phone || "N/A",
     },
     {
@@ -220,8 +230,10 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
           size="icon"
           className="cursor-pointer"
           onClick={(e) => {
-            e.stopPropagation(); // ✅ Prevent row click
-            row.original._id && deleteTenant(row.original._id);
+            e.stopPropagation();
+            if (row.original._id) {
+              deleteTenant(row.original._id, row.original.name);
+            }
           }}
         >
           <Trash />
@@ -256,7 +268,6 @@ export function TenantDataTable({ reloadKey, onEditTenant }: TenantTableProps) {
       emptyMessage="No tenants found."
       loadingMessage="Loading tenants..."
 
-      // ✅ Add this to handle row click
       onRowClick={(row) => {
         const id = row._id;
         if (id) router.push(`/admin/tenant/users?tenantId=${id}`);

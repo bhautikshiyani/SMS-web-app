@@ -6,6 +6,7 @@ interface IGroup extends Document {
   phoneNumber?: string; 
   users: mongoose.Types.ObjectId[];
   tenantId: string;      
+  createdBy: mongoose.Types.ObjectId;  
   isActive: boolean;
   isDeleted: boolean;
   createdAt?: Date;
@@ -14,11 +15,12 @@ interface IGroup extends Document {
 
 const groupSchema = new Schema<IGroup>(
   {
-    name: { type: String, required: true, unique: false }, 
+    name: { type: String, required: true }, 
     description: { type: String },
     phoneNumber: { type: String, default: '' },
     users: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     tenantId: { type: String, required: true },  
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }, 
     isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
   },
